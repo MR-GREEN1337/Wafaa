@@ -5,64 +5,106 @@ import { createSessionSchemaType, createSessionSchema } from "@/schema/session";
 import { SessionStatus, SessionType } from "@/types/session";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { checkAndDeductCredits, InsufficientCreditsError } from "@/lib/credits";
+import { UsageType } from "@prisma/client";
+import { NextResponse } from "next/server";
 
+// Define a type for the serializable response
+type SerializableSessionResponse = {
+  id: string;
+  name: string;
+  description: string;
+  sessionType: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+    
 export async function CreateSession(form: createSessionSchemaType) {
-    // Parse data and see if correct
-    const { success, data } = createSessionSchema.safeParse(form);
-    if (!success) {
-        throw new Error("invalid form data");
-    }
-
-    // Check if user is authenticated
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("user not authenticated");
-    }
-
-    // First, create or find a default relationship for the user
-    let relationship = await prisma.relationship.findFirst({
-        where: {
-            partner1Id: userId,
-            // For now, we'll create a self-relationship. You can modify this later
-            partner2Id: userId,
+    try {
+        const { success, data } = createSessionSchema.safeParse(form);
+        if (!success) {
+            throw new Error("invalid form data");
         }
-    });
-
-    if (!relationship) {
-        // Create a default relationship if none exists
-        relationship = await prisma.relationship.create({
-            data: {
-                name: "Personal Sessions",
+    
+        const { userId } = await auth();
+        if (!userId) {
+            throw new Error("user not authenticated");
+        }
+    
+        await checkAndDeductCredits(userId, UsageType.SESSION);
+    
+        // Find or create relationship with serializable response
+        const relationship = await prisma.relationship.findFirst({
+            where: {
                 partner1Id: userId,
-                partner2Id: userId, // Self-relationship for now
-                status: "ACTIVE"
+                partner2Id: userId,
+            },
+            select: {
+                id: true,
+                name: true,
+                status: true
             }
         });
-    }
-
-    // Create session with proper type handling
-    const sessionData = {
-        userId,
-        relationshipId: relationship.id, // Use the relationship we just created/found
-        name: data.name,
-        description: data.description || '',
-        sessionType: data.sessionType || SessionType.INDIVIDUAL,
-        status: SessionStatus.ACTIVE,
-    };
-
-    // Create session
-    const result = await prisma.session.create({
-        data: {
-            ...sessionData,
-            messages: {
-                create: [] // Initialize with empty messages array
+    
+        const relationshipId = relationship ? relationship.id : await createDefaultRelationship(userId);
+    
+        // Create session with explicit type selection
+        const result = await prisma.session.create({
+            data: {
+                userId,
+                relationshipId,
+                name: data.name,
+                description: data.description || '',
+                sessionType: data.sessionType || SessionType.INDIVIDUAL,
+                status: SessionStatus.ACTIVE,
+                messages: {
+                    create: []
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                sessionType: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true
             }
-        },
-    });
+        });
+    
+        if (!result) {
+            throw new Error("failed to create session");
+        }
 
-    if (!result) {
-        throw new Error("failed to create session");
+        // Serialize dates before returning
+        const serializedResult: SerializableSessionResponse = {
+            ...result,
+            createdAt: result.createdAt.toISOString(),
+            updatedAt: result.updatedAt.toISOString()
+        };
+    
+        redirect(`/dashboard/sessions/chat/${serializedResult.id}`);
+    } catch (error) {
+        if (error instanceof InsufficientCreditsError) {
+            return new NextResponse("Insufficient credits", { status: 402 });
+        }
+        console.error("Session creation error:", error);
+        throw error;
     }
+}
 
-    redirect(`/dashboard/sessions/chat/${result.id}`);
+async function createDefaultRelationship(userId: string): Promise<string> {
+    const relationship = await prisma.relationship.create({
+        data: {
+            name: "Personal Sessions",
+            partner1Id: userId,
+            partner2Id: userId,
+            status: "ACTIVE"
+        },
+        select: {
+            id: true
+        }
+    });
+    return relationship.id;
 }

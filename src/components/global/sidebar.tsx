@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { MenuIcon } from "lucide-react";
 import { routes } from "@/lib/constants";
 import SidebarDecoration from "./sidebardecoration";
+import CreditBadge from "./creditsBadge";
 
 export const Sidebar = () => {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export const Sidebar = () => {
         <Logo />
       </div>
       <div className="flex flex-col p-2">
+       <CreditBadge />
         {routes.map((route) => (
           <Link
             key={route.href}
@@ -77,6 +79,7 @@ export function MobileSidebar() {
           >
             <Logo />
             <div className="flex flex-col gap-1">
+              <CreditBadge />
               {routes.map((route) => (
                 <Link
                   key={route.href}

@@ -6,40 +6,42 @@ import { clerkClient } from '@clerk/nextjs/server'
 
 export async function GET() {
   try {
-    const { userId } = await auth()
+    const { userId } = await auth();
 
     if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 })
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     // Fetch user's subscription from database
     const subscription = await prisma.subscription.findUnique({
       where: { userId },
       include: { plan: true }
-    })
+    });
 
     if (!subscription) {
       return new NextResponse(
         JSON.stringify({ subscription: null }),
         { status: 200 }
-      )
+      );
     }
+
+    //console.log("Subscription dat", subscription)
 
     // If subscription exists, fetch usage records from Stripe
     const stripeSubscription = subscription.stripeSubscriptionId ? await stripe.subscriptions.retrieve(
       subscription.stripeSubscriptionId
     ) : null;
 
-    // Fetch usage records for the current period
-    const usageRecords = stripeSubscription ? await Promise.all([
+    // Check if stripeSubscription and items exist
+    const usageRecords = stripeSubscription && stripeSubscription.items.data.length > 0 ? await Promise.all([
       stripe.subscriptionItems.listUsageRecordSummaries(
         stripeSubscription.items.data[0].id,
         { limit: 1 }
       ),
-      stripe.subscriptionItems.listUsageRecordSummaries(
+      stripeSubscription.items.data.length > 1 ? stripe.subscriptionItems.listUsageRecordSummaries(
         stripeSubscription.items.data[1].id,
         { limit: 1 }
-      )
+      ) : null // Handle case where there is no second item
     ]) : null;
 
     const formattedUsageRecords = [
@@ -51,7 +53,8 @@ export async function GET() {
         type: 'RELATIONSHIP',
         quantity: usageRecords?.[1]?.data?.[0]?.total_usage || 0
       }
-    ]
+    ];
+
     const result = JSON.stringify({
       id: subscription.id,
       status: subscription.status,
@@ -66,11 +69,12 @@ export async function GET() {
         relationshipLimit: subscription.plan.relationshipLimit
       },
       usageRecords: formattedUsageRecords
-    })
-    return new NextResponse(result,{ status: 200 })
+    });
+
+    return new NextResponse(result, { status: 200 });
   } catch (error) {
-    console.error('Error fetching subscription:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error('Error fetching subscription:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 

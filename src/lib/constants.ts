@@ -55,7 +55,7 @@ import {
 export const plans = [
   {
     id: "price_1QJgTGG1mp4lNUIgFKeEvKtn",
-    name: "basic",
+    name: "Basic",
     price: 9.90,
     description: "Perfect for individuals just getting started",
     features: [
@@ -65,7 +65,8 @@ export const plans = [
       "Email support"
     ],
     sessionLimit: 50,
-    relationshipLimit: 5
+    relationshipLimit: 5,
+    monthlyCredits: 50,
   },
   {
     id: "pro",
@@ -81,7 +82,8 @@ export const plans = [
       "API access"
     ],
     sessionLimit: 200,
-    relationshipLimit: 20
+    relationshipLimit: 20,
+    monthlyCredits: 50,
   },
   {
     id: "enterprise",
@@ -98,6 +100,7 @@ export const plans = [
       "SSO authentication"
     ],
     sessionLimit: 999999,
-    relationshipLimit: 999999
+    relationshipLimit: 999999,
+    monthlyCredits: 50,
   }
 ]

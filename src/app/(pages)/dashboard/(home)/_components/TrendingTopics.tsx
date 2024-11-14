@@ -57,6 +57,7 @@ export default function TrendingTopics({
 }: {
   topics: any
 }) {
+  //console.log("Trending topics", topics);
   // Transform data for the chart
   const chartData = topics.map((topic: any) => ({
     name: topic.topic,

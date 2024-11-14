@@ -46,8 +46,11 @@ model Subscription {
   usageRecords         UsageRecord[]
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
-}
 
+  @@unique([userId, planId], name: "userId_planId")
+
+}
+// Delete and transform to type to validate types/constants plans
 model Plan {
   id                 String         @id @default(cuid())
   name               String         // e.g., "Basic", "Pro", "Enterprise"

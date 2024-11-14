@@ -95,6 +95,16 @@ export async function GET(req: Request) {
       return new NextResponse('Session ID required', { status: 400 });
     }
 
+    //Check if session status is active or not
+     const session = await prisma.session.findUnique({
+      where: {id: sessionId},
+      include: {messages: {orderBy: {createdAt: 'asc'}}}
+     });
+
+     if (!session || session.status === 'COMPLETED') {
+      return new NextResponse('Session not found or was COMPLETED', { status: 404 });
+     }
+
     // Verify session belongs to user
     const messages = await prisma.message.findMany({
       where: {
