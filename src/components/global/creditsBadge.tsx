@@ -9,6 +9,12 @@ interface CreditBadgeProps {
   className?: string;
 }
 
+interface CreditsResponse {
+  credits: number;
+  nextRefillAt: string;
+  lastRefillAt: string;
+}
+
 const CreditBadge = ({ className = '' }: CreditBadgeProps) => {
   const [credits, setCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +25,7 @@ const CreditBadge = ({ className = '' }: CreditBadgeProps) => {
       try {
         const response = await fetch('/api/credits');
         if (!response.ok) throw new Error('Failed to fetch credits');
-        const data = await response.json();
+        const data: CreditsResponse = await response.json();
         setCredits(data.credits);
       } catch (error) {
         toast({

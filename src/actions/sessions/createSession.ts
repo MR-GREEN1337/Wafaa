@@ -9,32 +9,45 @@ import { checkAndDeductCredits, InsufficientCreditsError } from "@/lib/credits";
 import { UsageType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-// Define a type for the serializable response
-type SerializableSessionResponse = {
-  id: string;
-  name: string;
-  description: string;
-  sessionType: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+type CreateSessionResponse = {
+  success: boolean;
+  data?: {
+    id: string;
+    redirectUrl: string;
+  };
+  error?: string;
 };
-    
-export async function CreateSession(form: createSessionSchemaType) {
+
+export async function CreateSession(form: createSessionSchemaType): Promise<CreateSessionResponse> {
     try {
         const { success, data } = createSessionSchema.safeParse(form);
         if (!success) {
-            throw new Error("invalid form data");
+            return {
+                success: false,
+                error: "Invalid form data"
+            };
         }
     
         const { userId } = await auth();
         if (!userId) {
-            throw new Error("user not authenticated");
+            return {
+                success: false,
+                error: "User not authenticated"
+            };
         }
     
-        await checkAndDeductCredits(userId, UsageType.SESSION);
+        try {
+            await checkAndDeductCredits(userId, UsageType.SESSION);
+        } catch (error) {
+            if (error instanceof InsufficientCreditsError) {
+                return {
+                    success: false,
+                    error: "Insufficient credits"
+                };
+            }
+            throw error;
+        }
     
-        // Find or create relationship with serializable response
         const relationship = await prisma.relationship.findFirst({
             where: {
                 partner1Id: userId,
@@ -49,7 +62,6 @@ export async function CreateSession(form: createSessionSchemaType) {
     
         const relationshipId = relationship ? relationship.id : await createDefaultRelationship(userId);
     
-        // Create session with explicit type selection
         const result = await prisma.session.create({
             data: {
                 userId,
@@ -74,23 +86,25 @@ export async function CreateSession(form: createSessionSchemaType) {
         });
     
         if (!result) {
-            throw new Error("failed to create session");
+            return {
+                success: false,
+                error: "Failed to create session"
+            };
         }
-
-        // Serialize dates before returning
-        const serializedResult: SerializableSessionResponse = {
-            ...result,
-            createdAt: result.createdAt.toISOString(),
-            updatedAt: result.updatedAt.toISOString()
-        };
     
-        redirect(`/dashboard/sessions/chat/${serializedResult.id}`);
+        return {
+            success: true,
+            data: {
+                id: result.id,
+                redirectUrl: `/dashboard/sessions/chat/${result.id}`
+            }
+        };
     } catch (error) {
-        if (error instanceof InsufficientCreditsError) {
-            return new NextResponse("Insufficient credits", { status: 402 });
-        }
         console.error("Session creation error:", error);
-        throw error;
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "An unexpected error occurred"
+        };
     }
 }
 

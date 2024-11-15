@@ -23,6 +23,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CreateSession } from '@/actions/sessions/createSession';
 import CustomDialogHeader from '@/components/global/CustomDialogHeader';
+import { useRouter } from 'next/navigation';
 
 type Relationship = {
   id: string;
@@ -34,6 +35,7 @@ type Relationship = {
 
 function CreateSessionDialog({triggerText}: {triggerText?: string}) {
   const [open, setOpen] = React.useState(false);
+  const router = useRouter();
 
   const form = useForm<createSessionSchemaType>({
     resolver: zodResolver(createSessionSchema),
@@ -58,12 +60,17 @@ function CreateSessionDialog({triggerText}: {triggerText?: string}) {
 
   const {mutate, isPending} = useMutation({
     mutationFn: CreateSession,
-    onSuccess: () => {
-      toast.success("Session created successfully", { id: "create-session" });
-      setOpen(false);
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        toast.success("Session created successfully", { id: "create-session" });
+        setOpen(false);
+        router.push(response.data.redirectUrl);
+      } else {
+        toast.error(response.error || "Failed to create session", { id: "create-session" });
+      }
     },
-    onError: () => {
-      toast.error("Failed to create session", { id: "create-session" });
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create session", { id: "create-session" });
     }
   });
 

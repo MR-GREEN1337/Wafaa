@@ -139,6 +139,7 @@ export default function Chat({
       {!isCompleted ? (
         <TooltipWrapper content="Mark session as completed">
           <Button
+          disabled={messages.length <= 4}
             onClick={() => completeSessionMutation.mutate()}
             variant="outline"
             className="gap-2 max-w-md mx-auto bg-primary hover:bg-primary/80"

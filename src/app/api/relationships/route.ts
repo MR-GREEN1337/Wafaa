@@ -111,8 +111,8 @@ export async function POST(req: Request, res: NextApiResponse) {
         ],
       },
     });
-    console.log("Existing relationship:", existingRelationship);
     if (existingRelationship) {
+      console.log("Existing relationship:", existingRelationship);
       return new NextResponse("Relationship already exists", { status: 400 });
     }
 

@@ -27,6 +27,7 @@ export async function checkAndDeductCredits(
 
     // Get credit cost for the usage type
     const creditCost = await getCreditCost(usageType);
+    //console.log("cresits usagfe", creditCost);
     const totalCost = creditCost * quantity;
 
     // Check if user has sufficient credits

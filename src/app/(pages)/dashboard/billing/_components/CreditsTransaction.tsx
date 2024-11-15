@@ -44,7 +44,7 @@ const CreditTransactions = () => {
     const fetchData = async () => {
       try {
         const [transactionsRes, analyticsRes] = await Promise.all([
-          fetch('/api/credits'),
+          fetch('/api/credits/transactions'),
           fetch('/api/credits/analytics')
         ]);
 
@@ -187,7 +187,7 @@ const CreditTransactions = () => {
             {filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 hover:text-black"
               >
                 <div className="flex items-center gap-4">
                   <div className={`p-2 rounded-full ${getTransactionColor(transaction.type)}`}>
