@@ -73,9 +73,9 @@ const BillingPage = () => {
   };
 
   useEffect(() => {
+    console.log("User subscription", subscription);
     Promise.all([fetchSubscriptionData()]).finally(() => setLoading(false));
   }, []);
-
   const handleSubscribe = async (planId: string) => {
     try {
       setSubscribing((prev) => ({ ...prev, [planId]: true }));
@@ -114,7 +114,7 @@ const BillingPage = () => {
 
   if (loading) return <LoadingSkeleton />;
   
-  if (!subscription) {
+  if (!subscription || !subscription.plan) {
     return (
       <div className="flex-1 flex flex-col h-full p-8">
         <div className="flex flex-col gap-8">
@@ -132,7 +132,7 @@ const BillingPage = () => {
                 plan={plan}
                 onSubscribe={() => handleSubscribe(plan.id)}
                 subscribing={subscribing[plan.id] || false}
-                currentPlanId={subscription?.plan?.id || ''}
+                currentPlanId={subscription?.plan?.id || ""}
               />
             ))}
           </div>
@@ -293,34 +293,63 @@ type PlanCardProps = {
 };
 
 // PlanCard and LoadingSkeleton components remain the same
-const PlanCard = ({ plan, onSubscribe, subscribing, currentPlanId }: PlanCardProps) => (
-  <Card className={`${plan.name === "Pro" ? "border-primary" : ""}`}>
-    <CardHeader>
+export const PlanCard = ({ plan, onSubscribe, subscribing, currentPlanId }: PlanCardProps) => (
+  <Card className={`
+    transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg
+    ${plan.name === "Pro" ? "border-primary" : ""} 
+    relative overflow-hidden
+    ${plan.id === currentPlanId ? "bg-muted" : "hover:bg-accent/5"}
+  `}>
+    <div className={`
+      absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300
+      ${plan.name === "Pro" ? "bg-primary/5" : "bg-accent/5"}
+    `} />
+    
+    <CardHeader className="relative">
       <div className="flex justify-between items-start">
         <div>
-          <CardTitle className="hover:text-black">{plan.name}</CardTitle>
+          <CardTitle className="transition-colors duration-200 hover:text-primary">
+            {plan.name}
+          </CardTitle>
           <CardDescription>{plan.description}</CardDescription>
         </div>
-        {plan.name === "Pro" && <Badge variant="default">Popular</Badge>}
+        {plan.name === "Pro" && (
+          <Badge 
+            variant="default"
+            className="animate-pulse"
+          >
+            Popular
+          </Badge>
+        )}
       </div>
     </CardHeader>
-    <CardContent>
-      <div className="mb-6">
+    
+    <CardContent className="relative">
+      <div className="mb-6 transition-transform duration-200 hover:scale-110 origin-left">
         <span className="text-3xl font-bold">${plan.price}</span>
         <span className="text-muted-foreground">/month</span>
       </div>
       <ul className="space-y-3">
         {plan.features.map((feature: any) => (
-          <li key={feature} className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-primary" />
+          <li 
+            key={feature} 
+            className="flex items-center gap-2 transition-transform duration-200 hover:translate-x-2"
+          >
+            <Check className="h-4 w-4 text-primary transition-colors duration-200 group-hover:text-primary" />
             <span>{feature}</span>
           </li>
         ))}
       </ul>
     </CardContent>
-    <CardFooter>
+    
+    <CardFooter className="relative">
       <Button
-        className="w-full"
+        className={`
+          w-full transition-all duration-300
+          ${plan.name === "Pro" 
+            ? "bg-primary hover:bg-primary/90 hover:shadow-md" 
+            : "hover:bg-primary hover:text-white"}
+        `}
         variant={plan.name === "Pro" ? "default" : "outline"}
         onClick={() => onSubscribe(plan.id)}
         disabled={subscribing || plan.id === currentPlanId}

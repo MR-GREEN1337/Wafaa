@@ -11,6 +11,7 @@ import { MenuIcon } from "lucide-react";
 import { routes } from "@/lib/constants";
 import SidebarDecoration from "./sidebardecoration";
 import CreditBadge from "./creditsBadge";
+import OnboardingSidebar from "./OnboardingSidebar";
 
 export const Sidebar = () => {
   const pathname = usePathname();
@@ -50,6 +51,8 @@ export const Sidebar = () => {
         ))}
       </div>
       <SidebarDecoration />
+      {/*If haven't onboarded yet, display this card*/}
+      <OnboardingSidebar />
     </div>
   );
 };
@@ -97,6 +100,7 @@ export function MobileSidebar() {
                 </Link>
               ))}
             </div>
+            <OnboardingSidebar />
           </SheetContent>
         </Sheet>
       </nav>

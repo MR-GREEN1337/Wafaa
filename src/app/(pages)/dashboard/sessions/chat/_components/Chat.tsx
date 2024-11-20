@@ -16,6 +16,8 @@ import { useMutation } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { completeSession } from "@/actions/sessions/completeSession";
 
+const MAX_MESSAGES = 20; // Maximum number of messages allowed
+
 export default function Chat({
   session,
 }: {
@@ -26,8 +28,11 @@ export default function Chat({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [status, setStatus] = useState<SessionStatus>(session.status as SessionStatus);
+  const [tooltipMessage, setTooltipMessage] = useState<string>("Send message");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isMessageLimitExceeded = messages.length >= MAX_MESSAGES;
 
   const completeSessionMutation = useMutation({
     mutationFn: async () => await completeSession(session.id),
@@ -39,6 +44,19 @@ export default function Chat({
       toast.error("Failed to complete session");
     },
   });
+
+  // Update tooltip message based on conditions
+  useEffect(() => {
+    if (isLoading) {
+      setTooltipMessage("Sending...");
+    } else if (isMessageLimitExceeded) {
+      setTooltipMessage(`Maximum limit of ${MAX_MESSAGES} messages reached`);
+    } else if (!message.trim()) {
+      setTooltipMessage("Type a message to send");
+    } else {
+      setTooltipMessage("Send message");
+    }
+  }, [isLoading, isMessageLimitExceeded, message]);
 
   // Load initial messages
   useEffect(() => {
@@ -65,7 +83,7 @@ export default function Chat({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || isMessageLimitExceeded) return;
 
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
@@ -100,6 +118,11 @@ export default function Chat({
           data.assistantMessage,
         ])
       );
+
+      // Auto-complete session if message limit is reached
+      if (messages.length + 2 >= MAX_MESSAGES) {
+        completeSessionMutation.mutate();
+      }
     } catch (error) {
       toast.error("Failed to send message. Please try again.");
       setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
@@ -111,6 +134,7 @@ export default function Chat({
   };
 
   const isCompleted = status === SessionStatus.COMPLETED;
+  const isInputDisabled = isLoading || isCompleted || isMessageLimitExceeded;
 
   const MessageBubble = ({
     content,
@@ -134,12 +158,22 @@ export default function Chat({
     </div>
   );
 
+  const getStatusMessage = () => {
+    if (isCompleted) {
+      return "This session has been completed";
+    }
+    if (isMessageLimitExceeded) {
+      return `Message limit (${MAX_MESSAGES}) reached`;
+    }
+    return `${MAX_MESSAGES - messages.length} messages remaining`;
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col space-y-4 p-4">
-      {!isCompleted ? (
+      {!isCompleted && !isMessageLimitExceeded && (
         <TooltipWrapper content="Mark session as completed">
           <Button
-          disabled={messages.length <= 4}
+          disabled={messages.length < 4 || isLoading}
             onClick={() => completeSessionMutation.mutate()}
             variant="outline"
             className="gap-2 max-w-md mx-auto bg-primary hover:bg-primary/80"
@@ -148,11 +182,6 @@ export default function Chat({
             Complete Session
           </Button>
         </TooltipWrapper>
-      ) : (
-        <Alert variant="default" className="mx-auto max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>This session has been completed</AlertDescription>
-        </Alert>
       )}
 
       <Card className="flex flex-1 flex-col">
@@ -184,8 +213,8 @@ export default function Chat({
                 ref={inputRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
-                disabled={isLoading || isCompleted}
+                placeholder={isInputDisabled ? "Chat disabled" : "Type your message..."}
+                disabled={isInputDisabled}
                 className="flex-1 border-4 border-rose-900"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -194,16 +223,18 @@ export default function Chat({
                   }
                 }}
               />
-              <TooltipWrapper content={isLoading ? "Sending..." : "Send message"}>
+              <TooltipWrapper content={tooltipMessage}>
                 <Button
                   type="submit"
-                  disabled={isLoading || !message.trim()}
+                  disabled={isInputDisabled || !message.trim()}
                   className="w-10 h-10 p-0"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
+                    <TooltipWrapper content={getStatusMessage()}>
                     <Send className="h-4 w-4" />
+                    </TooltipWrapper>
                   )}
                 </Button>
               </TooltipWrapper>

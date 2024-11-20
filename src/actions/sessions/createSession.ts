@@ -114,7 +114,9 @@ async function createDefaultRelationship(userId: string): Promise<string> {
             name: "Personal Sessions",
             partner1Id: userId,
             partner2Id: userId,
-            status: "ACTIVE"
+            status: "ACTIVE",
+            createdAt: new Date(),
+            updatedAt: new Date()
         },
         select: {
             id: true

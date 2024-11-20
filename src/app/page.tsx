@@ -8,105 +8,14 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Lightbulb, Shield, Sparkles, Diamond, Heart, Star, ArrowLeft, ArrowRight } from 'lucide-react';
+import ProductShowcase from '@/components/global/ProductShowcase';
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeSlide, setActiveSlide] = useState(0);
-  
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  
-  const dashboardScreenshots = [
-    {
-      title: "AI-Powered Relationship Analytics",
-      description: "Get deep insights into your relationship patterns with our advanced analytics dashboard",
-      image: "/snapshots/1.png"
-    },
-    {
-      title: "Interactive Connection Timeline",
-      description: "Visualize your journey together with our beautiful timeline interface",
-      image: "/snapshots/2.png"
-    },
-    {
-      title: "Real-time Mood Tracking",
-      description: "Stay connected with intelligent emotion tracking and suggestions",
-      image: "/snapshots/3.png"
-    }
-  ];
-
-
-const ProductShowcase = () => (
-    <section className="py-32 bg-gradient-to-br from-gray-50 to-rose-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-8">
-        <div className="relative">
-          {/* Decorative elements */}
-          <div className="absolute -left-40 -top-40 w-80 h-80 bg-rose-300/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute -right-40 -bottom-40 w-80 h-80 bg-purple-300/10 rounded-full blur-3xl animate-pulse delay-700" />
-
-          {/* Main showcase container */}
-          <div className="relative">
-            <div className="flex items-center justify-between mb-12">
-              <div className="flex-1">
-                <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                  {dashboardScreenshots[activeSlide].title}
-                </h3>
-                <p className="text-xl text-gray-600">
-                  {dashboardScreenshots[activeSlide].description}
-                </p>
-              </div>
-              <div className="flex gap-4 ml-8">
-                <Button
-                  variant="outline"
-                  className="rounded-full p-3"
-                  onClick={() => setActiveSlide((prev) => (prev === 0 ? dashboardScreenshots.length - 1 : prev - 1))}
-                >
-                  <ArrowLeft className="w-6 h-6" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full p-3"
-                  onClick={() => setActiveSlide((prev) => (prev === dashboardScreenshots.length - 1 ? 0 : prev + 1))}
-                >
-                  <ArrowRight className="w-6 h-6" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Screenshot showcase */}
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-500">
-              <div className="absolute inset-0 bg-gradient-to-tr from-rose-600/10 to-purple-600/10 mix-blend-overlay" />
-              <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-gray-200 bg-white/10 backdrop-blur-sm">
-                <div className="absolute top-0 w-full h-8 bg-gray-900/5 backdrop-blur-sm border-b border-gray-200/20" />
-                <img
-                  src={dashboardScreenshots[activeSlide].image}
-                  alt={dashboardScreenshots[activeSlide].title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Navigation dots */}
-            <div className="flex justify-center mt-8 gap-3">
-              {dashboardScreenshots.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    activeSlide === index
-                      ? 'bg-rose-600 w-12'
-                      : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-
 
   return (
     <div className="min-h-screen">
@@ -126,7 +35,7 @@ const ProductShowcase = () => (
             <Logo />
           </div>
           
-          <nav className="space-x-12">
+{/*          <nav className="space-x-12">
             {['Experience', 'Pricing', 'Resources', 'Begin'].map((item, index) => (
               <a
                 key={item}
@@ -140,7 +49,7 @@ const ProductShowcase = () => (
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-rose-600 transition-all duration-300 group-hover:w-full" />
               </a>
             ))}
-          </nav>
+          </nav> */}
         </header>
 
         {/* Enhanced Hero Content */}
@@ -178,12 +87,6 @@ const ProductShowcase = () => (
                 Begin Your Journey
               </Button>
             </a>
-            <Button 
-              variant="outline"
-              className="border-2 border-rose-600 text-rose-600 hover:bg-rose-900 ease-in-out duration-300 hover:text-white px-12 py-7 rounded-full text-lg font-medium tracking-wide"
-            >
-              Explore Platform
-            </Button>
           </div>
         </section>
       </div>

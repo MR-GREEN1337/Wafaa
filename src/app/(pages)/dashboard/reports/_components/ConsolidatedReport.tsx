@@ -57,7 +57,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
       </Alert>
     );
   }
-
+  console.log("Analysis data:", analysis);
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -119,7 +119,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
             <TrendingUp className="h-4 w-4 text-violet-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analysis.commonPatterns.length}</div>
+            <div className="text-2xl font-bold">{analysis.commonPatterns?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Identified patterns</p>
           </CardContent>
         </Card>
@@ -156,7 +156,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analysis.commonPatterns.map((pattern, index) => (
+              {analysis.commonPatterns && analysis.commonPatterns.map((pattern, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${
@@ -186,7 +186,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
             <div>
               <h3 className="font-semibold mb-2">Your Perspective</h3>
               <ul className="space-y-2">
-                {analysis.improvements.map((improvement, index) => (
+                {analysis.improvements && analysis.improvements.map((improvement, index) => (
                   <li key={index} className="flex items-center space-x-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     <span className="text-sm">{improvement}</span>
@@ -197,7 +197,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
             <div>
               <h3 className="font-semibold mb-2">Partner's Perspective</h3>
               <ul className="space-y-2">
-                {analysis.strengths.map((strength, index) => (
+                {analysis.strengths && analysis.strengths.map((strength, index) => (
                   <li key={index} className="flex items-center space-x-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                     <span className="text-sm">{strength}</span>
@@ -208,7 +208,7 @@ export default function ConsolidatedReport({ analysis, onRefresh }: Consolidated
             <div>
               <h3 className="font-semibold mb-2">Actionable Solutions</h3>
               <ul className="space-y-2">
-                {analysis.recommendations.map((recommendation, index) => (
+                {analysis.recommendations && analysis.recommendations.map((recommendation, index) => (
                   <li key={index} className="flex items-center space-x-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     <span className="text-sm">{recommendation}</span>

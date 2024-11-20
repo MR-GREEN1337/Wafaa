@@ -96,6 +96,22 @@ export async function POST(req: Request) {
       return new NextResponse('User email not found', { status: 400 })
     }
 
+    const user_db = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    })
+
+    if (!user_db) {
+      await prisma.user.create({
+        data: {
+          id: userId,
+          email: userEmail,
+          name: user.firstName ? user.firstName : userEmail.split('@')[0],
+        }
+      })
+    }
+
     // Fetch the user's current subscription
     const currentSubscription = await prisma.subscription.findUnique({
       where: { userId },

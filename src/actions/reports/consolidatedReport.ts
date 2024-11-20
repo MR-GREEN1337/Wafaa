@@ -33,7 +33,25 @@ interface PeriodAnalysis {
   recommendations: string[];
 }
 
-interface ConsolidatedAnalysis {
+export interface PartnerPerceptions {
+  perceptions: Array<{
+    quality: string;
+    confidence: number;
+    evidence: string[];
+    context: string;
+  }>;
+  overallImpression: string;
+  communicationStyle: string;
+  emotionalResponse: string;
+  trustLevel: number;
+  areas: {
+    appreciation: string[];
+    concern: string[];
+  };
+}
+
+
+export interface ConsolidatedAnalysis {
   overallSentiment: number;
   totalInteractions: number;
   uniquePartners: number;
@@ -53,6 +71,14 @@ interface ConsolidatedAnalysis {
   strengths: string[];
   improvements: string[];
   recommendations: string[];
+  partnerPerceptions: {
+    perPartner: Record<string, PartnerPerceptions>;
+    summary: {
+      commonQualities: string[];
+      averageTrust: number;
+      generalImpression: string;
+    };
+  };
 }
 
 // Helper function to group messages by time period (weeks)
@@ -68,6 +94,62 @@ function groupMessagesByPeriod(messages: MessageWithMetadata[]): Record<string, 
     );
     return `Week ${weekDiff + 1}`;
   });
+}
+
+export async function analyzePartnerPerceptions(messages: MessageWithMetadata[], userId: string): Promise<PartnerPerceptions> {
+  const prompt = `Analyze the following conversation messages to determine how the partner perceives the user. Focus on their emotional responses, communication patterns, and expressed views.
+
+Messages to analyze:
+${messages.map(m => `${m.role}: ${m.content}`).join('\n')}
+
+Provide the analysis in the following JSON format, return only JSON:
+{
+  "perceptions": [
+    {
+      "quality": "Supportive listener",
+      "confidence": 0.85,
+      "evidence": ["Shows consistent empathy", "Asks follow-up questions"],
+      "context": "Emotional discussions"
+    }
+  ],
+  "overallImpression": "Caring and attentive partner",
+  "communicationStyle": "Direct but gentle",
+  "emotionalResponse": "Generally positive and validating",
+  "trustLevel": 0.9,
+  "areas": {
+    "appreciation": ["Emotional availability", "Patience"],
+    "concern": ["Work-life balance", "Stress management"]
+  }
+}`;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a relationship analysis expert focused on understanding partner perceptions and dynamics.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      model: 'mixtral-8x7b-32768',
+      temperature: 0.3,
+      max_tokens: 2048,
+      top_p: 0.9
+    });
+
+    const analysisContent = completion.choices[0]?.message?.content;
+    if (!analysisContent) {
+      throw new Error('No analysis content received from Groq');
+    }
+
+    return JSON.parse(analysisContent);
+  } catch (error) {
+    console.error('Failed to analyze partner perceptions:', error);
+    throw error;
+  }
 }
 
 // Analyze messages for a single period using Groq
@@ -249,7 +331,7 @@ export async function generateConsolidatedAnalysis(messages: MessageWithMetadata
     ) / periodAnalyses.length;
 
     // Generate consolidated analysis
-    const consolidatedAnalysis: ConsolidatedAnalysis = {
+    const consolidatedAnalysisBefore: any = {
       overallSentiment: Math.round(overallSentiment * 100),
       totalInteractions: messages.length,
       uniquePartners: uniquePartners.size,
@@ -261,13 +343,94 @@ export async function generateConsolidatedAnalysis(messages: MessageWithMetadata
       recommendations: generateOverallRecommendations(periodAnalyses)
     };
 
-    return consolidatedAnalysis;
+    const messagesByPartner = groupBy(messages, m => 
+      m.session.relationship.partner1Id === userId 
+        ? m.session.relationship.partner2Id 
+        : m.session.relationship.partner1Id
+    );
+  
+    // Analyze perceptions for each partner
+    const perPartner: Record<string, PartnerPerceptions> = {};
+    for (const [partnerId, partnerMessages] of Object.entries(messagesByPartner)) {
+      perPartner[partnerId] = await analyzePartnerPerceptions(partnerMessages, userId);
+    }
+  
+    // Calculate summary statistics
+    const allPerceptions = Object.values(perPartner).flatMap(p => p.perceptions.map(x => x.quality));
+    const commonQualities = [...new Set(allPerceptions)]
+      .map(quality => ({
+        quality,
+        count: allPerceptions.filter(q => q === quality).length
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map(x => x.quality);
+  
+    const averageTrust = Object.values(perPartner)
+      .reduce((acc, p) => acc + p.trustLevel, 0) / Object.values(perPartner).length;
+  
+    return {
+      ...consolidatedAnalysisBefore,
+      partnerPerceptions: {
+        perPartner,
+        summary: {
+          commonQualities,
+          averageTrust,
+          generalImpression: await generateGeneralImpression(perPartner)
+        }
+      }
+    };
+
   } catch (error) {
     console.error('Error generating consolidated analysis:', error);
     throw error;
   }
 }
 
+// Helper function to generate general impression from partner perceptions
+async function generateGeneralImpression(perPartner: Record<string, PartnerPerceptions>): Promise<string> {
+  const prompt = `Analyze the following partner perceptions data and generate a concise general impression summary of how partners perceive the user. The summary should be balanced, highlighting both strengths and areas for growth.
+  
+  Partner Perceptions Data:
+  ${JSON.stringify(perPartner, null, 2)}
+  
+  Provide the analysis in the following JSON format, return only JSON:
+  {
+    "generalImpression": "string describing overall impression across all partners"
+    }`;
+    
+    try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a relationship analysis expert focused on synthesizing partner perceptions into meaningful insights. Be balanced, constructive, and focus on patterns across multiple partners.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      model: 'mixtral-8x7b-32768',
+      temperature: 0.3,
+      max_tokens: 1024,
+      top_p: 0.9
+    });
+    
+    const analysisContent = completion.choices[0]?.message?.content;
+    if (!analysisContent) {
+      throw new Error('No analysis content received from Groq');
+    }
+    
+    const result = JSON.parse(analysisContent);
+    return result.generalImpression;
+  } catch (error) {
+    console.error('Failed to generate general impression:', error);
+    throw error;
+  }
+}
+
+// Updated generateDefaultAnalysis with partnerPerceptions
 // Helper function to generate default analysis when no messages exist
 export async function generateDefaultAnalysis(): Promise<ConsolidatedAnalysis> {
   return {
@@ -285,6 +448,14 @@ export async function generateDefaultAnalysis(): Promise<ConsolidatedAnalysis> {
       "Begin tracking communication patterns",
       "Document key relationship milestones",
       "Schedule regular relationship reviews"
-    ]
+    ],
+    partnerPerceptions: {
+      perPartner: {},
+      summary: {
+        commonQualities: [],
+        averageTrust: 0,
+        generalImpression: "No interaction data available yet to form impressions. Begin engaging with partners to build a perception profile."
+      }
+    }
   };
 }

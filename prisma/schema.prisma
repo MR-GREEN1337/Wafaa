@@ -7,6 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RelationshipBasis {
+  ISLAMIC
+  CHRISTIAN
+  BUDDHIST
+  JEWISH
+  SECULAR
+  INTERFAITH
+  OTHER
+}
+
 model User {
   id                    String        @id @default(cuid())
   email                 String        @unique
@@ -14,19 +24,40 @@ model User {
   // User traits
   personalityType       String?       // MBTI or similar
   communicationStyle    String?       // Direct, Passive, Aggressive, etc.
-  loveLanguages        String[]      // Quality Time, Acts of Service, etc.
-  coreValues           String[]      // Family, Career, Personal Growth, etc.
-  conflictStyle        String?       // Avoiding, Accommodating, Compromising, etc.
-  attachmentStyle      String?       // Secure, Anxious, Avoidant, etc.
-  stressors            String[]      // Work, Family, Health, etc.
-  interests            String[]
+  loveLanguages         String[]      // Quality Time, Acts of Service, etc.
+  coreValues            String[]      // Family, Career, Personal Growth, etc.
+  conflictStyle         String?       // Avoiding, Accommodating, Compromising, etc.
+  attachmentStyle       String?       // Secure, Anxious, Avoidant, etc.
+  stressors             String[]      // Work, Family, Health, etc.
+  interests             String[]
+  religiousBelief       String?       // Individual's religious/spiritual identity
+  onboardingCompleted   Boolean       @default(false)
 
   relationships         Relationship[] @relation("Partner1")
   relationshipsAsPartner2 Relationship[] @relation("Partner2")
   sessions              Session[]
-  subscription          Subscription?  // One-to-one relation with subscription
+  subscription          Subscription?  
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+}
+
+model Relationship {
+  id               String           @id @default(cuid())
+  name             String
+  partner1         User             @relation("Partner1", fields: [partner1Id], references: [id])
+  partner1Id       String
+  partner2         User             @relation("Partner2", fields: [partner2Id], references: [id])
+  partner2Id       String
+  status           String
+  basis            RelationshipBasis? // New field for religious/spiritual framework
+  customBasis      String?           // For OTHER basis, allows custom description
+  religiousValues  Json?            // Stores specific religious/spiritual values and preferences
+  sessions         Session[]
+  analyses         Analysis[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([partner1Id, partner2Id])
 }
 
 model Subscription {
@@ -119,23 +150,6 @@ enum UsageType {
   ANALYSIS
 }
 
-// Existing models remain unchanged...
-model Relationship {
-  id          String    @id @default(cuid())
-  name        String
-  partner1    User      @relation("Partner1", fields: [partner1Id], references: [id])
-  partner1Id  String
-  partner2    User      @relation("Partner2", fields: [partner2Id], references: [id])
-  partner2Id  String
-  status      String
-  sessions    Session[]
-  analyses    Analysis[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@unique([partner1Id, partner2Id])
-}
-
 model Session {
   id             String       @id @default(cuid())
   user           User         @relation(fields: [userId], references: [id])
@@ -171,6 +185,7 @@ model Analysis {
   sessions       Session[]
   type           String
   content        Json
+  partnerPerceptions Json? 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }

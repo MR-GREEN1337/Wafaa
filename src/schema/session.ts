@@ -6,6 +6,8 @@ export const createSessionSchema = z.object({
   relationshipId: z.string().optional(),
   sessionType: z.enum(["individual", "joint"]),
   status: z.enum(["active", "completed", "archived"]).default("active"),
+  basis: z.enum(["ISLAMIC", "CHRISTIAN", "BUDDHIST", "JEWISH", "SECULAR", "INTERFAITH", "OTHER",]).default("OTHER"),
+  customBasis: z.string().optional(),
 });
 
 export type createSessionSchemaType = z.infer<typeof createSessionSchema>;

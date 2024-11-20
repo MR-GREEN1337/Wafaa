@@ -16,30 +16,44 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import CustomDialogHeader from '@/components/global/CustomDialogHeader';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { createRelationshipSchema, createRelationshipSchemaType } from '@/schema/relationship';
 
-// Type for the API response
+const relationshipBasisOptions = [
+  { value: "ISLAMIC", label: "Islamic" },
+  { value: "CHRISTIAN", label: "Christian" },
+  { value: "BUDDHIST", label: "Buddhist" },
+  { value: "JEWISH", label: "Jewish" },
+  { value: "SECULAR", label: "Secular" },
+  { value: "INTERFAITH", label: "Interfaith" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
 type RelationshipResponse = {
   id: string;
   name: string;
   partner1Id: string;
   partner2Id: string | null;
   status: 'pending' | 'active' | 'declined';
+  basis?: string;
 };
 
 function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
   const [open, setOpen] = React.useState(false);
   const queryClient = useQueryClient();
+  const [showCustomBasis, setShowCustomBasis] = React.useState(false);
 
   const form = useForm<createRelationshipSchemaType>({
     resolver: zodResolver(createRelationshipSchema),
     defaultValues: {
       name: "",
       partnerEmail: "",
+      basis: undefined,
+      customBasis: "",
     }
   });
 
@@ -64,7 +78,7 @@ function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
       toast.success("Invitation sent successfully!", { 
         description: "Your partner will receive an email invitation.",
       });
-      toast.dismiss("create-relationship"); // Dismiss the loading toast
+      toast.dismiss("create-relationship");
       setOpen(false);
     },
     onError: (error: Error) => {
@@ -73,7 +87,7 @@ function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
       } else {
         toast.error("Failed to create relationship");
       }
-      toast.dismiss("create-relationship"); // Dismiss the loading toast
+      toast.dismiss("create-relationship");
     }
   });
 
@@ -85,6 +99,7 @@ function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
   return (
     <Dialog open={open} onOpenChange={() => {
       form.reset();
+      setShowCustomBasis(false);
       setOpen(!open);
     }}>
       <DialogTrigger asChild>
@@ -144,6 +159,63 @@ function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
                   </FormItem> 
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="basis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className='flex gap-1 items-center'>
+                      Religious/Spiritual Basis
+                      <p className='text-xs text-primary'>(optional)</p>
+                    
+                      </FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setShowCustomBasis(value === "OTHER");
+                      }}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a basis for your relationship" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {relationshipBasisOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Optional: Select the religious or spiritual framework for your relationship
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {showCustomBasis && (
+                <FormField 
+                  control={form.control}
+                  name="customBasis"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Basis Description</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Describe your relationship's spiritual/philosophical framework"/>
+                      </FormControl>
+                      <FormDescription>
+                        Please describe your relationship's unique spiritual or philosophical framework
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem> 
+                  )}
+                />
+              )}
 
               <Button type="submit" className='w-full' disabled={isPending}>
                 {!isPending && "Send Invitation"}
