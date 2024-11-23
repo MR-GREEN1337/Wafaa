@@ -48,7 +48,7 @@ const PlanCard = ({ plan, onSubscribe, subscribing, currentPlanId }: PlanCardPro
           <span className="text-muted-foreground">/month</span>
         </div>
         <ul className="space-y-3">
-          {plan.features.map((feature: any) => (
+          {Array.isArray(plan.features) && plan.features.map((feature: any) => (
             <li 
               key={feature} 
               className="flex items-center gap-2 transition-transform duration-200 hover:translate-x-2"
