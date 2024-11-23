@@ -3,17 +3,16 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { Resend } from "resend";
 import { EmailTemplate } from "@/components/email-template";
-import { NextApiResponse } from "next";
 import { checkAndDeductCredits, InsufficientCreditsError } from "@/lib/credits";
 import { UsageType } from "@prisma/client";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(req: Request, res: NextApiResponse) {
+export async function POST(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { name, partnerEmail, basis, customBasis } = await req.json();
@@ -25,7 +24,7 @@ export async function POST(req: Request, res: NextApiResponse) {
     });
 
     if (!currentUser) {
-      return new NextResponse("User not found", { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check and deduct credits before creating the relationship
@@ -33,7 +32,7 @@ export async function POST(req: Request, res: NextApiResponse) {
       await checkAndDeductCredits(userId, UsageType.RELATIONSHIP);
     } catch (error) {
       if (error instanceof InsufficientCreditsError) {
-        return new NextResponse("Insufficient credits", { status: 402 });
+        return NextResponse.json({ error: "Insufficient credits" }, { status: 402 });
       }
       throw error;
     }
@@ -59,7 +58,7 @@ export async function POST(req: Request, res: NextApiResponse) {
     });
 
     if (existingRelationship) {
-      return new NextResponse("Relationship already exists", { status: 400 });
+      return NextResponse.json({ error: "Relationship already exists" }, { status: 400 });
     }
 
     // Create or get partner user
@@ -88,14 +87,13 @@ export async function POST(req: Request, res: NextApiResponse) {
         religiousValues: basis ? { 
           framework: basis,
           customDescription: basis === "OTHER" ? customBasis : undefined,
-          // Add any additional religious/spiritual preferences here
         } : undefined,
         createdAt: new Date(),
       },
     });
 
     // Send invitation email
-    const { data, error } = await resend.emails.send({
+    const { data, error: emailError } = await resend.emails.send({
       from: "Relationship App <invitation@resend.dev>",
       to: partnerEmail,
       subject: `${currentUser.name} invited you to connect`,
@@ -106,23 +104,24 @@ export async function POST(req: Request, res: NextApiResponse) {
       }),
     });
 
-    if (error) {
-      return NextResponse.json(error);
+    if (emailError) {
+      // Log the error but don't fail the request
+      console.error("Error sending email:", emailError);
     }
 
     return NextResponse.json(relationship);
   } catch (error) {
     console.error("Error creating relationship:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const relationships = await prisma.relationship.findMany({
@@ -171,6 +170,6 @@ export async function GET() {
     return NextResponse.json(formattedRelationships);
   } catch (error) {
     console.error("[RELATIONSHIPS_GET]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }
