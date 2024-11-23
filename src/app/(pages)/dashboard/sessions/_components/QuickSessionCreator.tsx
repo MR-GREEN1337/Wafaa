@@ -36,7 +36,15 @@ const QuickSessionCreator = () => {
   });
 
   const createSessionMutation = useMutation({
-    mutationFn: async (sessionData) => {
+    mutationFn: async (sessionData: {
+      name?: string;
+      relationshipId?: string;
+      description?: string;
+      sessionType?: 'individual' | 'joint';
+      status?: 'completed' | 'active' | 'archived';
+      basis?: 'ISLAMIC' | 'CHRISTIAN' | 'BUDDHIST' | 'JEWISH' | 'SECULAR' | 'INTERFAITH' | 'OTHER';
+      customBasis?: string;
+    }) => {
       const response = await CreateSession(sessionData);
       if (!response.success) {
         throw new Error(response.error || 'Failed to create session');
@@ -70,7 +78,10 @@ const QuickSessionCreator = () => {
       status: 'active'
     };
 
-    createSessionMutation.mutate(sessionData);
+    createSessionMutation.mutate({
+      ...sessionData,
+      status: 'active' as const
+    });
   };
 
   const hasRelationships = relationships && relationships.length > 0;
