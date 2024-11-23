@@ -6,6 +6,7 @@ import Stripe from 'stripe'
 import { plans } from '@/lib/constants'
 import { upsertPlans } from '@/helpers/upsertPlans'
 import { Resend } from 'resend'
+import { auth } from '@clerk/nextjs/server'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -82,7 +83,7 @@ async function findOrCreateSubscription(
     throw new Error('Customer has been deleted')
   }
 
-  const userId = customer.metadata?.userId
+  const userId = await auth();
   if (!userId) {
     throw new Error('User ID not found in customer metadata')
   }
@@ -98,7 +99,7 @@ async function findOrCreateSubscription(
   
   return prisma.subscription.create({
     data: {
-      userId,
+      userId: userId.toString(),
       planId: plan.id,
       status: 'ACTIVE',
       stripeCustomerId,
@@ -115,7 +116,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription, plan
   
   const customerId = subscription.customer as string
   
-  const customer = await stripe.customers.retrieve(customerId);
+  const customer = await stripe.customers.retrieve(customerId) as any;
   const userEmail = customer.deleted ? null : customer.email;
   
   const plan = plans.find(p => p.id === planId);
