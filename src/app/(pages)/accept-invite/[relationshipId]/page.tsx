@@ -6,8 +6,9 @@ import { Check, UserPlus, X } from 'lucide-react';
 import AcceptRelationshipButton from './_components/AcceptRelationshipButton';
 import { redirect } from 'next/navigation';
 
-export default async function Page({ params }: { params: { relationshipId: string } }) {
-  const { relationshipId } = params;
+type Props = Promise<{relationshipId: string}>
+export default async function Page(props: { params: Props}) {
+  const { relationshipId } = await props.params;
   const { userId } = await auth();
 
   if (!userId) {

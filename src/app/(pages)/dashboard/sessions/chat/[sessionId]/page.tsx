@@ -3,8 +3,9 @@ import { auth } from '@clerk/nextjs/server';
 import React from 'react';
 import Chat from '../_components/Chat';
 
-async function Page({ params }: { params: { sessionId: string } }) {
-    const { sessionId } = params;
+type Props = Promise<{sessionId: string}>
+export default async function Page(props: { params: Props}) {
+  const { sessionId } = await props.params;
     const { userId } = await auth();
 
     if (!userId) {
@@ -23,5 +24,3 @@ async function Page({ params }: { params: { sessionId: string } }) {
 
     return <Chat session={{...sessionWithMessages, messages: []}} />;
 }
-
-export default Page;
