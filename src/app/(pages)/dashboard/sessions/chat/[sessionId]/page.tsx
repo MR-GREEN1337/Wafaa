@@ -4,7 +4,7 @@ import React from 'react';
 import Chat from '../_components/Chat';
 
 async function Page({ params }: { params: { sessionId: string } }) {
-    const { sessionId } = await params;
+    const { sessionId } = params;
     const { userId } = await auth();
 
     if (!userId) {

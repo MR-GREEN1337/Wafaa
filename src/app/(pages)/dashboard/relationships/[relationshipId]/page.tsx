@@ -6,7 +6,7 @@ import { getOrGenerateAnalysis } from '@/actions/reports/generateReport';
 
 async function Page({ params }: { params: { relationshipId: string } }) {
     // TODO: Display data about the relationship from previous sessions, charts and paragraph
-    const { relationshipId } = await params;
+    const { relationshipId } = params;
     const { userId } = await auth();
 
     if (!userId) {

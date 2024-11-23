@@ -7,7 +7,7 @@ import AcceptRelationshipButton from './_components/AcceptRelationshipButton';
 import { redirect } from 'next/navigation';
 
 async function Page({ params }: { params: { relationshipId: string } }) {
-  const { relationshipId } = await params;
+  const { relationshipId } = params;
   const { userId } = await auth();
 
   if (!userId) {
