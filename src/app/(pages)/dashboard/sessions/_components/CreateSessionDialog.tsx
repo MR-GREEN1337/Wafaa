@@ -33,7 +33,7 @@ type Relationship = {
   status: string;
 };
 
-function CreateSessionDialog({triggerText, context}: {triggerText?: string, context?: string}) {
+function CreateSessionDialog({triggerText, context}: {triggerText?: any, context?: string}) {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
 
