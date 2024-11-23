@@ -243,7 +243,7 @@ async function refillCredits(stripeSubscriptionId: string, invoice: Stripe.Invoi
 async function sendWelcomeEmail(userEmail: string, planName: string) {
   try {
     await resend.emails.send({
-      from: 'Your App <notifications@yourdomain.com>',
+      from: 'Your App <notifications@wafaa.com>',
       to: userEmail,
       subject: 'Welcome to Your App!',
       html: `

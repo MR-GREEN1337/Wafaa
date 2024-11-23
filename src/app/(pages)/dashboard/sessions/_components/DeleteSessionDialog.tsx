@@ -39,11 +39,9 @@ function DeleteSessionDialog({open, setOpen, sessionName, sessionId}: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your session and remove your data from our servers.
             <div className='flex flex-col py-4 gap-2'>
-            <p>
+            This action cannot be undone. This will permanently delete your session and remove your data from our servers.
                 If you are sure, enter <b>{sessionName}</b> to confirm.
-            </p>
             <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} />
             </div>
           </AlertDialogDescription>

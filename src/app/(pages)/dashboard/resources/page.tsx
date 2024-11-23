@@ -11,8 +11,8 @@ import { Progress } from '@/components/ui/progress';
 
 const ANALYSIS_CACHE_TIME = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
 
+// Hello here
 async function getOrGenerateAnalysis(userId: string) {
-  // Previous implementation remains the same
   const existingAnalysis = await prisma.consolidatedAnalysis.findFirst({
     where: {
       userId,
@@ -26,10 +26,10 @@ async function getOrGenerateAnalysis(userId: string) {
   });
 
   if (existingAnalysis) {
-    console.log("Using existing analysis", existingAnalysis.analysis)
     return existingAnalysis.analysis;
   }
 
+  // Fetch messages with partner information including their names
   const messages = await prisma.message.findMany({
     where: {
       session: {
@@ -42,12 +42,46 @@ async function getOrGenerateAnalysis(userId: string) {
     include: {
       session: {
         include: {
-          relationship: true
+          relationship: {
+            include: {
+              partner1: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              },
+              partner2: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
         }
       }
     },
     orderBy: {
       createdAt: 'asc'
+    }
+  });
+
+  // Create a map of partner IDs to names
+  const partnerNames = new Map();
+  messages.forEach(m => {
+    const relationship = m.session.relationship;
+    if (relationship.partner1Id === userId) {
+      partnerNames.set(relationship.partner2Id, {
+        name: relationship.partner2.name,
+        id: relationship.partner2Id,
+        relationshipName: relationship.name // Including relationship name for context
+      });
+    } else {
+      partnerNames.set(relationship.partner1Id, {
+        name: relationship.partner1.name,
+        id: relationship.partner1Id,
+        relationshipName: relationship.name
+      });
     }
   });
 
@@ -63,10 +97,30 @@ async function getOrGenerateAnalysis(userId: string) {
     ? await generateConsolidatedAnalysis(messages, userId)
     : await generateDefaultAnalysis();
 
+  // Transform the perPartner object to use names instead of IDs
+  const perPartnerWithNames = {};
+  if (analysis.partnerPerceptions && analysis.partnerPerceptions.perPartner) {
+    Object.entries(analysis.partnerPerceptions.perPartner).forEach(([partnerId, perceptions]) => {
+      const partnerInfo = partnerNames.get(partnerId);
+      if (partnerInfo) {
+        const displayName = `${partnerInfo.name} (${partnerInfo.relationshipName})`;
+        perPartnerWithNames[displayName] = {
+          ...perceptions,
+          partnerId: partnerInfo.id,
+          relationshipName: partnerInfo.relationshipName
+        };
+      }
+    });
+  }
+
   const finalAnalysis = {
     ...analysis,
     uniquePartners: uniquePartners.size,
-    totalInteractions: messages.length
+    totalInteractions: messages.length,
+    partnerPerceptions: {
+      ...analysis.partnerPerceptions,
+      perPartner: perPartnerWithNames
+    }
   };
 
   await prisma.consolidatedAnalysis.create({
@@ -115,8 +169,8 @@ function PerceptionCard({ perception, index }: {
   );
 }
 
+// Update the PartnerPerceptions component to display partner names with relationship context
 function PartnerPerceptions({ analysis }: { analysis: any }) {
-  // Early return if no partner perceptions exist
   if (!analysis?.partnerPerceptions) {
     return (
       <Alert>
@@ -129,7 +183,6 @@ function PartnerPerceptions({ analysis }: { analysis: any }) {
     );
   }
 
-  // Provide default values to prevent undefined errors
   const summary = analysis.partnerPerceptions.summary ?? {
     generalImpression: "No specific insights available yet.",
     commonQualities: [],
@@ -186,21 +239,27 @@ function PartnerPerceptions({ analysis }: { analysis: any }) {
       <div>
         <h3 className="text-lg font-semibold mb-4">Detailed Perceptions</h3>
         {Object.keys(perPartner).length > 0 ? (
-          Object.values(perPartner).map((partner: any, partnerIndex: number) => (
+          Object.entries(perPartner).map(([displayName, partner]: [string, any], partnerIndex: number) => (
             <div key={partnerIndex} className="mb-6">
-              <h4 className="text-md font-medium mb-3">Partner {partnerIndex + 1}</h4>
-              {partner.perceptions && partner.perceptions.length > 0 ? (
-                partner.perceptions.map((perception: any, index: number) => (
-                  <PerceptionCard key={index} perception={perception} index={index} />
-                ))
-              ) : (
-                <Alert variant="default">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No perception data available for this partner.
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">{displayName}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {partner.perceptions && partner.perceptions.length > 0 ? (
+                    partner.perceptions.map((perception: any, index: number) => (
+                      <PerceptionCard key={index} perception={perception} index={index} />
+                    ))
+                  ) : (
+                    <Alert variant="default">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        No perception data available for this partner.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           ))
         ) : (

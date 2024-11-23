@@ -5,6 +5,7 @@ import { AlertCircle, InboxIcon } from 'lucide-react'
 import React, { Suspense } from 'react'
 import CreateSessionDialog from './_components/CreateSessionDialog'
 import SessionCard from './_components/SessionCard'
+import QuickSessionCreator from './_components/QuickSessionCreator'
 
 function page() {
   return (
@@ -14,7 +15,7 @@ function page() {
                 <h1 className='text-3xl font-bold'>Sessions</h1>
                 <p className='text-muted-foreground'>Manage your sessions</p>
             </div>
-        <CreateSessionDialog />
+        <QuickSessionCreator />
         </div> 
 
         <div className='h-full py-6'>

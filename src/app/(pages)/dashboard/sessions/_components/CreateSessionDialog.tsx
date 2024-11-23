@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Layers2Icon, Loader2 } from 'lucide-react';
+import { Layers2Icon, Loader2, Settings2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { createSessionSchema, createSessionSchemaType } from '@/schema/session';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +33,7 @@ type Relationship = {
   status: string;
 };
 
-function CreateSessionDialog({triggerText}: {triggerText?: string}) {
+function CreateSessionDialog({triggerText, context}: {triggerText?: string, context?: string}) {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
 
@@ -84,9 +84,16 @@ function CreateSessionDialog({triggerText}: {triggerText?: string}) {
       form.reset();
       setOpen(!open);
     }}>
+      {context !== "custom" ? (
       <DialogTrigger asChild>
         <Button>{triggerText ?? "Create session"}</Button>
       </DialogTrigger>
+      ): (
+        <DialogTrigger className="flex w-full items-center px-2 py-1.5">
+        <Settings2 className="mr-2 h-4 w-4" />
+        <span>Custom Session</span>
+      </DialogTrigger>
+      )}
       <DialogContent className="px-0">
         <CustomDialogHeader
           icon={Layers2Icon}

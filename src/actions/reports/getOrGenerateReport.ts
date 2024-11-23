@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { generateConsolidatedAnalysis, generateDefaultAnalysis } from "../reports/consolidatedReport";
 import { revalidatePath } from "next/cache";
 
-const ANALYSIS_CACHE_TIME = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+const ANALYSIS_CACHE_TIME = 10* 24 * 60 * 60 * 1000; // 10 days in milliseconds
 
 export async function getOrGenerateAnalysis(userId: string, forceRefresh = false) {
   if (forceRefresh) {
@@ -77,7 +77,7 @@ export async function getOrGenerateAnalysis(userId: string, forceRefresh = false
   await prisma.consolidatedAnalysis.create({
     data: {
       userId,
-      analysis: finalAnalysis
+      analysis: finalAnalysis as any
     }
   });
 

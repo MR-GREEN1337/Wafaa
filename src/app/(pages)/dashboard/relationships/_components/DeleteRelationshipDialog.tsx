@@ -41,21 +41,29 @@ function DeleteRelationshipDialog({open, setOpen, relationshipName, relationship
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            <p>This action is irreversible. Once deleted, this relationship and all associated data will be permanently removed from our servers. This includes:</p>
-            <ul className="list-disc pl-5 my-2">
+          <AlertDialogDescription className="space-y-4">
+            <div>
+              This action is irreversible. Once deleted, this relationship and all associated data will be permanently removed from our servers. This includes:
+            </div>
+            
+            <ul className="list-disc pl-5">
               <li>All related sessions, including messages exchanged.</li>
               <li>Analyses tied to this relationship.</li>
               <li>Shared data, such as documents and files linked to this relationship.</li>
             </ul>
-            <p className="mt-2">
-              <strong>Important:</strong> Deletion cannot be undone. Ensure you’ve saved any critical information before proceeding.
-            </p>
+            
+            <div>
+              <strong>Important:</strong> Deletion cannot be undone. Ensure you've saved any critical information before proceeding.
+            </div>
+            
             <div className="flex flex-col py-4 gap-2">
-              <p>
-                To confirm, type <b>{relationshipName}</b> below.
-              </p>
-              <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} />
+              <div>
+                To confirm, type <strong>{relationshipName}</strong> below.
+              </div>
+              <Input 
+                value={confirmText} 
+                onChange={(e) => setConfirmText(e.target.value)} 
+              />
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
