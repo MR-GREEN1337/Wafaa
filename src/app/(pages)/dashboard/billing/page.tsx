@@ -130,7 +130,12 @@ const BillingPage = () => {
             {plans.map((plan) => (
               <PlanCard
                 key={plan.id}
-                plan={plan}
+                plan={{
+                  ...plan,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  features: JSON.stringify(plan.features),
+                }}
                 onSubscribe={() => handleSubscribe(plan.id)}
                 subscribing={subscribing[plan.id] || false}
                 currentPlanId={subscription?.plan?.id || ""}
@@ -273,7 +278,11 @@ const BillingPage = () => {
               {plans.map((plan) => (
                 <PlanCard
                   key={plan.id}
-                  plan={plan}
+                  plan={{
+                    ...plan,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  }}
                   onSubscribe={handleSubscribe}
                   subscribing={subscribing[plan.id] || false}
                   currentPlanId={subscription.plan.id}
