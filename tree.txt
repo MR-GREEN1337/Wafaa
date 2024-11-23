@@ -67,7 +67,8 @@ src
 │   │   ├── dashboard
 │   │   │   ├── billing
 │   │   │   │   ├── _components
-│   │   │   │   │   └── CreditsTransaction.tsx
+│   │   │   │   │   ├── CreditsTransaction.tsx
+│   │   │   │   │   └── PlanCard.tsx
 │   │   │   │   └── page.tsx
 │   │   │   ├── (home)
 │   │   │   │   ├── _components
@@ -106,6 +107,7 @@ src
 │   │   │       ├── _components
 │   │   │       │   ├── CreateSessionDialog.tsx
 │   │   │       │   ├── DeleteSessionDialog.tsx
+│   │   │       │   ├── QuickSessionCreator.tsx
 │   │   │       │   └── SessionCard.tsx
 │   │   │       └── page.tsx
 │   │   └── layout.tsx
@@ -194,4 +196,4 @@ src
     ├── analysis.ts
     └── session.ts
 
-58 directories, 137 files
+58 directories, 139 files
