@@ -6,14 +6,7 @@ import { Check, UserPlus, X } from 'lucide-react';
 import AcceptRelationshipButton from './_components/AcceptRelationshipButton';
 import { redirect } from 'next/navigation';
 
-interface PageProps {
-  params: {
-    relationshipId: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
-const Page = async ({ params }: PageProps) => {
+export default async function Page({ params }: { params: { relationshipId: string } }) {
   const { relationshipId } = params;
   const { userId } = await auth();
 
@@ -136,6 +129,4 @@ const Page = async ({ params }: PageProps) => {
       </Card>
     </div>
   );
-};
-
-export default Page;
+}
