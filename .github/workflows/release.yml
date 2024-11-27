@@ -26,7 +26,7 @@ jobs:
             -e "ssh -i ~/.ssh/wafaa-server.pem -o StrictHostKeyChecking=no" \
             --exclude .git \
             --delete \
-            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app
+            ./ ubuntu@ec2-54-196-180-200.compute-1.amazonaws.com:~/app
 
       - name: Build application on EC2
         run: |
