@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, UserPlus, X } from 'lucide-react';
 import AcceptRelationshipButton from './_components/AcceptRelationshipButton';
 import { redirect } from 'next/navigation';
+import { clerkClient } from '@clerk/nextjs/server'
 
 type Props = Promise<{relationshipId: string}>
 export default async function Page(props: { params: Props}) {
@@ -24,30 +25,51 @@ export default async function Page(props: { params: Props}) {
     );
   }
 
-  // Check if relationship exists and get full details
-  const relationship = await prisma.relationship.findFirst({
-    where: {
-      id: relationshipId,
-      OR: [
-        { partner1Id: userId },
-        { partner2Id: userId }
-      ]
-    },
-    include: {
-      partner1: {
-        select: {
-          name: true,
-          email: true
-        }
-      },
-      partner2: {
-        select: {
-          name: true,
-          email: true
-        }
-      }
-    }
+  const user_data = await (await clerkClient()).users.getUser(userId)
+  //console.log("useer", user)
+  const userEmail = user_data.emailAddresses[0]?.emailAddress
+
+// Find the user based on their email
+let user = await prisma.user.findUnique({
+  where: { email: userEmail },
+});
+
+if (!user) {
+  throw new Error("User not found");
+}
+
+// Check if userId matches the retrieved user's ID
+if (userId !== user.id) {
+  // Update the user's ID in the database
+  user = await prisma.user.update({
+    where: { email: userEmail },
+    data: { id: userId },
   });
+}
+
+// Find the relationship
+const relationship = await prisma.relationship.findFirst({
+  where: {
+    OR: [
+      { partner1Id: user.id },
+      { partner2Id: user.id },
+    ],
+  },
+  include: {
+    partner1: {
+      select: {
+        name: true,
+        email: true,
+      },
+    },
+    partner2: {
+      select: {
+        name: true,
+        email: true,
+      },
+    },
+  },
+});
 
   if (!relationship) {
     return (
@@ -67,9 +89,9 @@ export default async function Page(props: { params: Props}) {
     redirect(`/dashboard/relationships/${relationshipId}`);
   }
 
-  const isInviter = relationship.partner1Id === userId && (relationship.partner1.email === userId); // Shitty but keep it for now
-  const partner = isInviter ? relationship.partner2 : relationship.partner1;
-  const inviter = isInviter ? relationship.partner1 : relationship.partner2;
+  const isInviter = relationship.partner1Id === userId
+  const inviter = relationship.partner1;
+  const partner = relationship.partner2;
 
   return (
     <div className="container max-w-2xl mx-auto p-4">

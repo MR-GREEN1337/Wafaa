@@ -244,11 +244,11 @@ async function refillCredits(stripeSubscriptionId: string, invoice: Stripe.Invoi
 async function sendWelcomeEmail(userEmail: string, planName: string) {
   try {
     await resend.emails.send({
-      from: 'Your App <notifications@wafaa.com>',
+      from: 'Wafaa AI <notifications@wafaa-ai.com>',
       to: userEmail,
-      subject: 'Welcome to Your App!',
+      subject: 'Welcome to Wafaa!',
       html: `
-        <h1>Welcome to Your App!</h1>
+        <h1>Welcome to Wafaa!</h1>
         <p>Thank you for subscribing to our ${planName} plan. We're excited to have you on board!</p>
         <p>Here's what you can expect:</p>
         <ul>

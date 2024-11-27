@@ -1,5 +1,6 @@
-"use client";
+"use client"
 
+import React from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   HandHeart,
@@ -24,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DeleteRelationshipDialog from "./DeleteRelationshipDialog";
-import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -72,7 +72,7 @@ const statusConfig = {
   },
 };
 
-function RelationshipCard({ relationship }: { relationship: Relationship }) {
+function RelationshipCard({ relationship, currentUserId }: { relationship: Relationship; currentUserId: string }) {
   const StatusIcon =
     statusConfig[relationship.status as keyof typeof statusConfig]?.icon ||
     AlertCircle;
@@ -83,21 +83,30 @@ function RelationshipCard({ relationship }: { relationship: Relationship }) {
     statusConfig[relationship.status as keyof typeof statusConfig]?.label ||
     "Unknown";
 
+  // Show accept button only if:
+  // 1. Status is pending AND
+  // 2. Current user is partner2 (recipient) AND
+  // 3. Current user is not partner1 (sender)
+  const showAcceptButton = 
+    relationship.status === "pending" && 
+    relationship.partner2Id === currentUserId &&
+    relationship.partner1Id !== currentUserId;
+
   return (
-    <Card className="border border-separate shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 dark:shadow-primary/30 w-[500px]">
-      <CardContent className="p-6">
+    <Card className="border border-separate shadow-sm rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 dark:shadow-primary/30 w-full max-w-[500px]">
+      <CardContent className="p-4 sm:p-6">
         <div className="space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-full flex items-center bg-primary/10 justify-center">
-                <HandHeart size={24} className="text-primary" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center bg-primary/10 justify-center">
+                <HandHeart size={20} className="text-primary sm:size-6" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold dark:text-white">
-                    {relationship.name}
+                <h3 className="text-base sm:text-lg font-semibold dark:text-white">
+                  {relationship.name || "Unnamed Relationship"}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-1">
                   <Badge
                     variant="secondary"
                     className={cn("gap-1 px-2 py-0.5", statusColor)}
@@ -115,22 +124,43 @@ function RelationshipCard({ relationship }: { relationship: Relationship }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <TooltipWrapper content="Access reports" side="bottom">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {showAcceptButton ? (
                 <Link
-                  href={`/dashboard/relationships/${relationship.id}`}
+                  href={`/accept-invite/${relationship.id}`}
                   className={cn(
                     buttonVariants({
                       variant: "default",
                       size: "sm",
                     }),
-                    "flex items-center gap-2"
+                    "flex items-center gap-2 w-full sm:w-auto justify-center"
                   )}
                 >
-                  <ChartNoAxesCombined size={16} />
-                  Reports
+                  <CheckCircle2 size={16} />
+                  Accept Invitation
                 </Link>
-              </TooltipWrapper>
+              ) : (
+                <TooltipWrapper content="Access reports" side="bottom">
+                  <Link
+                    href={`/dashboard/relationships/${relationship.id}`}
+                    className={cn(
+                      buttonVariants({
+                        variant: "default",
+                        size: "sm",
+                      }),
+                      "flex items-center gap-2 w-full sm:w-auto justify-center"
+                    )}
+                  >
+                    <Button
+                      disabled={relationship.status !== "active"}
+                      className="max-w-md bg-transparent hover:bg-transparent"
+                    >
+                      <ChartNoAxesCombined size={16} />
+                      Reports
+                    </Button>
+                  </Link>
+                </TooltipWrapper>
+              )}
               <RelationshipsActions
                 relationshipName={relationship.name}
                 relationshipId={relationship.id}
@@ -139,25 +169,25 @@ function RelationshipCard({ relationship }: { relationship: Relationship }) {
           </div>
 
           {/* Partners Info */}
-          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg text-sm">
             <div>
               <p className="text-muted-foreground mb-1">Partner 1</p>
-              <p className="font-medium">{relationship.partner1?.name}</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="font-medium">{relationship.partner1?.name || "N/A"}</p>
+              <p className="text-muted-foreground text-xs break-all">
                 {relationship.partner1?.email}
               </p>
             </div>
-            <div>
+            <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
               <p className="text-muted-foreground mb-1">Partner 2</p>
-              <p className="font-medium">{relationship.partner2?.name}</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="font-medium">{relationship.partner2?.name || "N/A"}</p>
+              <p className="text-muted-foreground text-xs break-all">
                 {relationship.partner2?.email}
               </p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-muted-foreground gap-2">
             <p>
               Created{" "}
               {isNaN(new Date(relationship.createdAt).getTime())

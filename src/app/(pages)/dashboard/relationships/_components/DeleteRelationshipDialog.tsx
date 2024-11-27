@@ -41,10 +41,12 @@ function DeleteRelationshipDialog({open, setOpen, relationshipName, relationship
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-4">
-            <div>
-              This action is irreversible. Once deleted, this relationship and all associated data will be permanently removed from our servers. This includes:
-            </div>
+          <div className="text-sm text-muted-foreground space-y-4">
+            <AlertDialogDescription asChild>
+              <span>
+                This action is irreversible. Once deleted, this relationship and all associated data will be permanently removed from our servers. This includes:
+              </span>
+            </AlertDialogDescription>
             
             <ul className="list-disc pl-5">
               <li>All related sessions, including messages exchanged.</li>
@@ -52,20 +54,24 @@ function DeleteRelationshipDialog({open, setOpen, relationshipName, relationship
               <li>Shared data, such as documents and files linked to this relationship.</li>
             </ul>
             
-            <div>
-              <strong>Important:</strong> Deletion cannot be undone. Ensure you've saved any critical information before proceeding.
-            </div>
+            <AlertDialogDescription asChild>
+              <span>
+                <strong>Important:</strong> Deletion cannot be undone. Ensure you've saved any critical information before proceeding.
+              </span>
+            </AlertDialogDescription>
             
             <div className="flex flex-col py-4 gap-2">
-              <div>
-                To confirm, type <strong>{relationshipName}</strong> below.
-              </div>
+              <AlertDialogDescription asChild>
+                <span>
+                  To confirm, type <strong>{relationshipName}</strong> below.
+                </span>
+              </AlertDialogDescription>
               <Input 
                 value={confirmText} 
                 onChange={(e) => setConfirmText(e.target.value)} 
               />
             </div>
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

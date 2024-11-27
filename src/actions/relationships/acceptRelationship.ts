@@ -15,10 +15,6 @@ export async function acceptRelationship(relationshipId: string) {
     const relationship = await prisma.relationship.findFirst({
       where: {
         id: relationshipId,
-        OR: [
-          { partner1Id: userId },
-          { partner2Id: userId }
-        ],
         status: 'pending'
       }
     });
@@ -49,8 +45,8 @@ export async function acceptRelationship(relationshipId: string) {
     });
 
     // Revalidate the relationships page
-    revalidatePath('/relationships');
-    revalidatePath(`/relationships/${relationshipId}`);
+    revalidatePath('/dashboard/relationships');
+    revalidatePath(`/dashboard/relationships/${relationshipId}`);
 
     return { success: true };
   } catch (error) {

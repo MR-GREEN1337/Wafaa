@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const ProductShowcase = () => {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -10,19 +10,22 @@ const ProductShowcase = () => {
   const dashboardScreenshots = [
     {
       title: "AI-Powered Relationship Analytics",
-      description: "Get deep insights into your relationship patterns with our advanced analytics dashboard",
-      image: "/snapshots/1.png"
+      description:
+        "Get deep insights into your relationship patterns with our advanced analytics dashboard",
+      image: "/snapshots/1.png",
     },
     {
       title: "Interactive Connection Timeline",
-      description: "Visualize your journey together with our beautiful timeline interface",
-      image: "/snapshots/2.png"
+      description:
+        "Visualize your journey together with our beautiful timeline interface",
+      image: "/snapshots/2.png",
     },
     {
       title: "Real-time Mood Tracking",
-      description: "Stay connected with intelligent emotion tracking and suggestions",
-      image: "/snapshots/3.png"
-    }
+      description:
+        "Stay connected with intelligent emotion tracking and suggestions",
+      image: "/snapshots/3.png",
+    },
   ];
 
   return (
@@ -48,14 +51,22 @@ const ProductShowcase = () => {
                 <Button
                   variant="outline"
                   className="rounded-full p-3"
-                  onClick={() => setActiveSlide((prev) => (prev === 0 ? dashboardScreenshots.length - 1 : prev - 1))}
+                  onClick={() =>
+                    setActiveSlide((prev) =>
+                      prev === 0 ? dashboardScreenshots.length - 1 : prev - 1
+                    )
+                  }
                 >
                   <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <Button
                   variant="outline"
                   className="rounded-full p-3"
-                  onClick={() => setActiveSlide((prev) => (prev === dashboardScreenshots.length - 1 ? 0 : prev + 1))}
+                  onClick={() =>
+                    setActiveSlide((prev) =>
+                      prev === dashboardScreenshots.length - 1 ? 0 : prev + 1
+                    )
+                  }
                 >
                   <ArrowRight className="w-6 h-6" />
                 </Button>
@@ -63,10 +74,10 @@ const ProductShowcase = () => {
             </div>
 
             {/* Screenshot showcase with floating animation and shimmer */}
-            <div 
+            <div
               className="relative rounded-2xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-500"
               style={{
-                animation: 'floatAnimation 6s ease-in-out infinite',
+                animation: "floatAnimation 6s ease-in-out infinite",
               }}
             >
               <style jsx>{`
@@ -90,10 +101,10 @@ const ProductShowcase = () => {
 
                 @keyframes shimmer {
                   0% {
-                    background-position: -1000px 0;
+                    background-position: -200% 0;
                   }
                   100% {
-                    background-position: 1000px 0;
+                    background-position: 200% 0;
                   }
                 }
 
@@ -109,19 +120,28 @@ const ProductShowcase = () => {
                   }
                 }
 
-                .shimmer-bg {
+                .shimmer-border {
                   position: absolute;
                   inset: 0;
+                  padding: 1px; /* Default border thickness */
                   background: linear-gradient(
-                    120deg,
-                    rgba(255, 255, 255, 0) 30%,
-                    rgba(255, 255, 255, 0.15) 40%,
-                    rgba(255, 255, 255, 0) 50%
+                    90deg,
+                    hsl(var(--primary)) 0%,
+                    hsl(var(--primary) / 0.3) 50%,
+                    hsl(var(--primary)) 100%
                   );
-                  background-size: 200% 200%;
+                  background-size: 200% 100%;
                   animation: shimmer 3s linear infinite;
+                  mask: linear-gradient(#fff 0 0) content-box,
+                    linear-gradient(#fff 0 0);
+                  mask-composite: exclude;
                 }
 
+                @media (max-width: 768px) {
+                  .shimmer-border {
+                    padding: 0.5px; /* Thinner border for mobile devices */
+                  }
+                }
                 .gradient-bg {
                   position: absolute;
                   inset: 0;
@@ -138,11 +158,11 @@ const ProductShowcase = () => {
               `}</style>
               {/* Layered background effects */}
               <div className="gradient-bg" />
-              <div className="shimmer-bg" />
+              <div className="shimmer-border" />
               <div className="absolute inset-0 bg-gradient-to-tr from-rose-600/10 to-purple-600/10 mix-blend-overlay" />
-              
-              <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-gray-200 bg-white/10 backdrop-blur-sm">
-                <div className="absolute top-0 w-full h-8 bg-gray-900/5 backdrop-blur-sm border-b border-gray-200/20" />
+
+              <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm">
+                <div className="absolute top-0 w-full h-8 bg-gray-900/5 backdrop-blur-sm" />
                 <img
                   src={dashboardScreenshots[activeSlide].image}
                   alt={dashboardScreenshots[activeSlide].title}
@@ -162,8 +182,8 @@ const ProductShowcase = () => {
                   onClick={() => setActiveSlide(index)}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     activeSlide === index
-                      ? 'bg-rose-600 w-12'
-                      : 'bg-gray-300 hover:bg-gray-400'
+                      ? "bg-rose-600 w-12"
+                      : "bg-gray-300 hover:bg-gray-400"
                   }`}
                 />
               ))}

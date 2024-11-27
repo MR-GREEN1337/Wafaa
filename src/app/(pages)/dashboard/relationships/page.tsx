@@ -25,7 +25,7 @@ async function Page() {
         </div> 
         <div className='h-full py-6'>
             <Suspense fallback={<RelationshipsSkeleton />}>
-                <UserRelationships />
+                <UserRelationships userId={userId as string} />
             </Suspense>
         </div>
     </div>
@@ -41,7 +41,7 @@ async function Page() {
         )
     }
     
-async function UserRelationships() {
+async function UserRelationships(userId: {userId: string}) {
     const relationships = await GetRelationshipsForUser();
     if (relationships.length === 0) {
         return (
@@ -50,7 +50,7 @@ async function UserRelationships() {
                     <InboxIcon size={40} className='stroke-primary' />
                 </div>
                 <div className='flex flex-col gap-1 text-center'>
-                    <p className='font-bold'>No session created yet</p>
+                    <p className='font-bold'>No relationship created yet</p>
                     <p className='text-sm text-muted-foreground'>
                         Click the button below to create your first session
                     </p>
@@ -59,10 +59,11 @@ async function UserRelationships() {
             </div>
         )
     }
+    //console.log(relationships)
     return (
         <div className='grid grid-cols-1 gap-4'>
             {relationships.map((relationship) => (
-                <RelationshipCard key={relationship.id} relationship={relationship as any}/> 
+                <RelationshipCard key={relationship.id} relationship={relationship as any} currentUserId={userId.userId} /> 
             ))}
         </div>
     )

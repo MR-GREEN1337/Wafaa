@@ -186,7 +186,7 @@ const Home = () => {
           </p>
           <a href="/dashboard">
             <Button className="bg-white text-rose-600 hover:bg-rose-50 px-8 md:px-12 py-6 md:py-7 rounded-full text-lg font-medium tracking-wide shadow-xl hover:shadow-2xl transform transition hover:-translate-y-1">
-              Begin Your Free Trial
+              Begin Your Journey
             </Button>
           </a>
         </div>

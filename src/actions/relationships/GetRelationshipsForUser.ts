@@ -17,7 +17,7 @@ export async function GetRelationshipsForUser() {
                 { partner1Id: userId },
                 { partner2Id: userId }
             ],
-            //status: "active"
+            //status: "active" I only wanted pending relationhips that I sent
         },
         select: {
             id: true,

@@ -197,3 +197,7 @@ src
     └── session.ts
 
 58 directories, 139 files
+
+rsync -avz --exclude 'node_modules' --exclude '.git' --exclude '.env' --exclude '.next' \
+-e "ssh -i ~/.ssh/wafaa-server.pem" \
+. ubuntu@ec2-54-196-180-200.compute-1.amazonaws.com:~/app

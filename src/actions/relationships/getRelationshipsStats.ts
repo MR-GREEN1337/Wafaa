@@ -104,93 +104,122 @@ function calculateMessageStats(messages: { content: string; metadata: any }[]) {
   };
 }
 
-// Modified getRelationshipStats to include latest analysis
 export async function getRelationshipStats(userId: string) {
-    const stats = await prisma.$transaction(async (tx) => {
-      const activeRelationships = await tx.relationship.count({
-        where: {
+  const stats = await prisma.$transaction(async (tx) => {
+    const activeRelationships = await tx.relationship.count({
+      where: {
+        OR: [
+          { partner1Id: userId },
+          { partner2Id: userId }
+        ],
+        status: 'ACTIVE'
+      }
+    });
+
+    const totalSessions = await tx.session.count({
+      where: {
+        relationship: {
           OR: [
             { partner1Id: userId },
             { partner2Id: userId }
-          ],
-          status: 'ACTIVE'
+          ]
         }
-      });
-  
-      const totalSessions = await tx.session.count({
-        where: {
-          relationship: {
-            OR: [
-              { partner1Id: userId },
-              { partner2Id: userId }
-            ]
-          }
-        }
-      });
-  
-      const completedSessions = await tx.session.count({
-        where: {
-          relationship: {
-            OR: [
-              { partner1Id: userId },
-              { partner2Id: userId }
-            ]
-          },
-          status: 'completed'
-        }
-      });
-  
-      // Get latest analysis for each relationship
-      const recentAnalyses = await tx.analysis.findMany({
-        where: {
-          relationship: {
-            OR: [
-              { partner1Id: userId },
-              { partner2Id: userId }
-            ]
-          },
-          type: 'message_based'
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        take: 10,
-        select: {
-          content: true,
-          createdAt: true,
-          relationship: {
-            select: {
-              name: true
-            }
-          }
-        }
-      });
-
-      const avgSentiment = recentAnalyses.reduce((acc, analysis) => {
-        const content = analysis.content as { sentimentScore?: number };
-        if (typeof content?.sentimentScore === 'number') {
-          return acc + content.sentimentScore;
-        }
-        return acc;
-      }, 0) / (recentAnalyses.filter(a => 
-        typeof (a.content as { sentimentScore?: number })?.sentimentScore === 'number'
-      ).length || 1);
-
-      //console.log("avgSentiment", avgSentiment);
-
-      return {
-        activeRelationships,
-        totalSessions,
-        completionRate: totalSessions ? (completedSessions / totalSessions) * 100 : 0,
-        averageSentiment: Math.round(avgSentiment * 100) / 100,
-        recentAnalyses,
-        lastUpdated: recentAnalyses[0]?.createdAt ?? new Date()
-      };
+      }
     });
-  
-    return stats;
-}
 
+    const completedSessions = await tx.session.count({
+      where: {
+        relationship: {
+          OR: [
+            { partner1Id: userId },
+            { partner2Id: userId }
+          ]
+        },
+        status: 'completed'
+      }
+    });
+
+    // Get latest analysis for each relationship
+    const recentAnalyses = await tx.analysis.findMany({
+      where: {
+        relationship: {
+          OR: [
+            { partner1Id: userId },
+            { partner2Id: userId }
+          ]
+        },
+        type: 'message_based'
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 10,
+      select: {
+        content: true,
+        createdAt: true,
+        relationship: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    // Get consolidated analysis
+    const consolidatedAnalysis = await tx.consolidatedAnalysis.findFirst({
+      where: {
+        userId: userId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Calculate average sentiment from recent analyses
+    const recentSentiments = recentAnalyses
+      .map(analysis => (analysis.content as { sentimentScore?: number })?.sentimentScore)
+      .filter((score): score is number => typeof score === 'number');
+
+    // Extract historical sentiment from consolidated analysis
+    const historicalSentiment = consolidatedAnalysis?.analysis as { averageSentiment?: number } | null;
+    const historicalScore = typeof historicalSentiment?.averageSentiment === 'number' 
+      ? historicalSentiment.averageSentiment 
+      : null;
+
+    // Calculate weighted average sentiment
+    let averageSentiment = 0;
+    if (recentSentiments.length > 0 || historicalScore !== null) {
+      const recentWeight = 0.7; // Give more weight to recent analyses
+      const historicalWeight = 0.3;
+
+      const recentAverage = recentSentiments.length > 0
+        ? recentSentiments.reduce((acc, score) => acc + score, 0) / recentSentiments.length
+        : 0;
+
+      if (historicalScore !== null) {
+        // If we have both recent and historical data
+        averageSentiment = (recentSentiments.length > 0)
+          ? (recentAverage * recentWeight) + (historicalScore * historicalWeight)
+          : historicalScore; // Use only historical if no recent data
+      } else {
+        // If we only have recent data
+        averageSentiment = recentAverage;
+      }
+    }
+
+    return {
+      activeRelationships,
+      totalSessions,
+      completionRate: totalSessions ? (completedSessions / totalSessions) * 100 : 0,
+      averageSentiment: Math.round(averageSentiment * 100) / 100,
+      recentAnalyses,
+      lastUpdated: recentAnalyses[0]?.createdAt ?? new Date(),
+      historicalDataAvailable: historicalScore !== null
+    };
+  });
+
+  return stats;
+}
 // Usage example:
 // After updating messages in a session:
 // await updateRelationshipStats(userId, sessionId);
@@ -205,7 +234,7 @@ export async function getTrendingTopics(userId: string) {
             { partner2Id: userId }
           ]
         },
-        status: 'completed' // Only analyze completed sessions
+        //status: 'completed' // Only analyze completed sessions
       },
       select: {
         id: true,
@@ -300,11 +329,13 @@ function calculateTopicSentiment(topic: string, messages: any[]) {
     return count ? Math.round((totalSentiment / count) * 100) / 100 : 0;
 }
 
-  export async function getRelationshipProgress(userId: string) {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-  
-    const analyses = await prisma.analysis.findMany({
+export async function getRelationshipProgress(userId: string) {
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  return await prisma.$transaction(async (tx) => {
+    // Get recent analyses
+    const recentAnalyses = await tx.analysis.findMany({
       where: {
         relationship: {
           OR: [
@@ -329,17 +360,183 @@ function calculateTopicSentiment(topic: string, messages: any[]) {
         }
       }
     });
-  
-    // Transform analyses into chart data
-    return analyses.map(analysis => ({
+
+    // Get historical consolidated analyses
+    const consolidatedAnalyses = await tx.consolidatedAnalysis.findMany({
+      where: {
+        userId: userId,
+        createdAt: {
+          gte: sixMonthsAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'asc'
+      },
+      select: {
+        createdAt: true,
+        analysis: true
+      }
+    });
+
+    // Get all relationship names for the user
+    const relationships = await tx.relationship.findMany({
+      where: {
+        OR: [
+          { partner1Id: userId },
+          { partner2Id: userId }
+        ]
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    });
+
+    // Create a map for quick relationship name lookup
+    const relationshipMap = new Map(relationships.map(r => [r.id, r.name]));
+
+    // Process consolidated analyses
+    const consolidatedDataPoints = consolidatedAnalyses.map(ca => {
+      const analysisContent = ca.analysis as {
+        relationshipMetrics?: {
+          [key: string]: {
+            sentiment?: number;
+            engagement?: number;
+            progress?: number;
+          }
+        }
+      };
+
+      // If the consolidated analysis contains per-relationship metrics
+      const relationshipMetrics = analysisContent.relationshipMetrics || {};
+      
+      return Object.entries(relationshipMetrics).map(([relationshipId, metrics]) => ({
+        date: ca.createdAt.toISOString().split('T')[0],
+        relationshipName: relationshipMap.get(relationshipId) || 'Unknown',
+        sentiment: metrics.sentiment || 0,
+        engagement: metrics.engagement || 0,
+        progress: metrics.progress || 0,
+        isHistorical: true
+      }));
+    }).flat();
+
+    // Process recent analyses
+    const recentDataPoints = recentAnalyses.map(analysis => ({
       date: analysis.createdAt.toISOString().split('T')[0],
       relationshipName: analysis.relationship.name,
       sentiment: (analysis.content as any).sentimentScore || 0,
       engagement: (analysis.content as any).engagementScore || 0,
-      progress: (analysis.content as any).progressScore || 0
+      progress: (analysis.content as any).progressScore || 0,
+      isHistorical: false
     }));
-  }
-  
+
+    // Combine and sort all data points
+    const allDataPoints = [...consolidatedDataPoints, ...recentDataPoints]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate moving averages and aggregate metrics
+    const processedData = allDataPoints.reduce((acc, curr) => {
+      const existing = acc.find(
+        item => item.date === curr.date && 
+        item.relationshipName === curr.relationshipName
+      );
+
+      if (existing) {
+        // If we have both historical and recent data for the same date,
+        // use weighted average favoring recent data
+        const weight = curr.isHistorical ? 0.3 : 0.7;
+        const complementWeight = curr.isHistorical ? 0.7 : 0.3;
+
+        existing.sentiment = (existing.sentiment * complementWeight + curr.sentiment * weight);
+        existing.engagement = (existing.engagement * complementWeight + curr.engagement * weight);
+        existing.progress = (existing.progress * complementWeight + curr.progress * weight);
+      } else {
+        acc.push({
+          date: curr.date,
+          relationshipName: curr.relationshipName,
+          sentiment: curr.sentiment,
+          engagement: curr.engagement,
+          progress: curr.progress,
+          // Calculate 7-day moving averages
+          movingAvgSentiment: calculateMovingAverage(allDataPoints, curr.date, curr.relationshipName, 'sentiment', 7),
+          movingAvgEngagement: calculateMovingAverage(allDataPoints, curr.date, curr.relationshipName, 'engagement', 7),
+          movingAvgProgress: calculateMovingAverage(allDataPoints, curr.date, curr.relationshipName, 'progress', 7)
+        });
+      }
+
+      return acc;
+    }, [] as Array<{
+      date: string;
+      relationshipName: string;
+      sentiment: number;
+      engagement: number;
+      progress: number;
+      movingAvgSentiment: number;
+      movingAvgEngagement: number;
+      movingAvgProgress: number;
+    }>);
+
+    // Add overall relationship health score
+    const finalData = processedData.map(dataPoint => ({
+      ...dataPoint,
+      overallScore: calculateOverallScore(dataPoint)
+    }));
+
+    return finalData;
+  });
+}
+
+// Helper function to calculate moving averages
+function calculateMovingAverage(
+  data: Array<{
+    date: string;
+    relationshipName: string;
+    sentiment: number;
+    engagement: number;
+    progress: number;
+  }>,
+  currentDate: string,
+  relationshipName: string,
+  metric: 'sentiment' | 'engagement' | 'progress',
+  days: number
+): number {
+  const currentDateObj = new Date(currentDate);
+  const startDate = new Date(currentDateObj);
+  startDate.setDate(startDate.getDate() - days);
+
+  const relevantData = data.filter(d => {
+    const date = new Date(d.date);
+    return date >= startDate && 
+           date <= currentDateObj && 
+           d.relationshipName === relationshipName;
+  });
+
+  if (relevantData.length === 0) return 0;
+
+  const sum = relevantData.reduce((acc, curr) => acc + curr[metric], 0);
+  return sum / relevantData.length;
+}
+
+// Helper function to calculate overall relationship health score
+function calculateOverallScore(dataPoint: {
+  sentiment: number;
+  engagement: number;
+  progress: number;
+}): number {
+  // Weighted average of all metrics
+  const weights = {
+    sentiment: 0.4,
+    engagement: 0.3,
+    progress: 0.3
+  };
+
+  return Math.round(
+    (dataPoint.sentiment * weights.sentiment +
+    dataPoint.engagement * weights.engagement +
+    dataPoint.progress * weights.progress) * 100
+  ) / 100;
+}
+
   export async function getLatestSessions(userId: string) {
     return await prisma.session.findMany({
       where: {

@@ -82,13 +82,18 @@ function CreateRelationshipDialog({triggerText}: {triggerText?: string}) {
       setOpen(false);
     },
     onError: (error: Error) => {
-      if (error.message.includes("already exists")) {
+      //console.log(error)
+      if (error.message.includes("Insufficient credits")) {
+        toast.error("Not enough credits", { 
+          description: "You need more credits to create a new relationship." 
+        });
+      } else if (error.message.includes("already exists")) {
         toast.error("A relationship with this partner already exists");
       } else {
         toast.error("Failed to create relationship");
       }
       toast.dismiss("create-relationship");
-    }
+    },
   });
 
   const onSubmit = useCallback((data: createRelationshipSchemaType) => {

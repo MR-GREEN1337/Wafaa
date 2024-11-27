@@ -86,47 +86,46 @@ const QuickSessionCreator = () => {
 
   const hasRelationships = relationships && relationships.length > 0;
 
+  // Common button styles
+  const buttonContent = createSessionMutation.isPending ? (
+    <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    <>
+      <Plus className="h-4 w-4" />
+      New Session
+    </>
+  );
+
   // If there are no relationships, render a simple button that opens the custom session dialog
   if (!hasRelationships) {
     return (
-      <Dialog>
-        <CreateSessionDialog 
-          triggerText={
-            <Button className="gap-2" disabled={createSessionMutation.isPending}>
-              {createSessionMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  New Session
-                </>
-              )}
-            </Button>
-          } 
-          context="custom"
-        />
-      </Dialog>
+      <div className="ml-auto">
+        <Dialog>
+          <CreateSessionDialog 
+            triggerText={
+              <Button variant="default" className="gap-2" disabled={createSessionMutation.isPending}>
+                {buttonContent}
+              </Button>
+            } 
+            context="custom"
+          />
+        </Dialog>
+      </div>
     );
   }
 
   // If there are relationships, render the full dropdown menu
   return (
-    <div className="relative">
+    <div className="ml-auto">
       <DropdownMenu open={isHovered} onOpenChange={setIsHovered}>
         <DropdownMenuTrigger asChild>
           <Button 
+            variant="default"
             className="gap-2"
             onMouseEnter={() => setIsHovered(true)}
             disabled={createSessionMutation.isPending}
           >
-            {createSessionMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Plus className="h-4 w-4" />
-                New Session
-              </>
-            )}
+            {buttonContent}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 

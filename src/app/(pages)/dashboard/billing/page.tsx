@@ -127,20 +127,15 @@ const BillingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={{
-                  ...plan,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                  features: JSON.stringify(plan.features),
-                }}
-                onSubscribe={() => handleSubscribe(plan.id)}
-                subscribing={subscribing[plan.id] || false}
-                currentPlanId={subscription?.plan?.id || ""}
-              />
-            ))}
+          {plans.map((plan) => (
+  <PlanCard 
+    key={plan.id}
+    plan={plan}
+    onSubscribe={handleSubscribe}
+    subscribing={subscribing}
+    currentPlanId={subscription?.plan?.id}
+  />
+))}
           </div>
         </div>
       </div>
@@ -275,19 +270,15 @@ const BillingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {plans.map((plan) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={{
-                    ...plan,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  }}
-                  onSubscribe={handleSubscribe}
-                  subscribing={subscribing[plan.id] || false}
-                  currentPlanId={subscription.plan.id}
-                />
-              ))}
+            {plans.map((plan) => (
+  <PlanCard 
+    key={plan.id}
+    plan={plan}
+    onSubscribe={handleSubscribe}
+    subscribing={subscribing}
+    currentPlanId={subscription?.plan?.id}
+  />
+))}
             </div>
           </>
         )}

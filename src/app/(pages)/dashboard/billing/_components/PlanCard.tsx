@@ -1,84 +1,125 @@
+import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plan } from "@prisma/client";
 import { Check, Loader2 } from "lucide-react";
 
+// Define the type for the plan
+type Plan = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+  sessionLimit: number;
+  relationshipLimit: number;
+  monthlyCredits: number;
+};
+
 type PlanCardProps = {
-    plan: Plan;
-    onSubscribe: (planId: string) => void;
-    subscribing: boolean;
-    currentPlanId: string;
+  plan: Plan;
+  onSubscribe: (planId: string) => void;
+  subscribing?: { [key: string]: boolean };
+  currentPlanId?: string;
+};
+
+const PlanCard: React.FC<PlanCardProps> = ({
+  plan,
+  onSubscribe,
+  subscribing = {},
+  currentPlanId = ''
+}) => {
+  const isCurrentPlan = plan.id === currentPlanId;
+  const isPro = plan.name === "Counselor";
+  const isSubscribing = subscribing[plan.id] || false;
+
+  const handleSubscribe = () => {
+    if (!isCurrentPlan && !isSubscribing) {
+      onSubscribe(plan.id);
+    }
   };
-  
-const PlanCard = ({ plan, onSubscribe, subscribing, currentPlanId }: PlanCardProps) => (
-    <Card className={`
-      transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg
-      ${plan.name === "Pro" ? "border-primary" : ""} 
-      relative overflow-hidden
-      ${plan.id === currentPlanId ? "bg-muted" : "hover:bg-accent/5"}
-    `}>
-      <div className={`
-        absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300
-        ${plan.name === "Pro" ? "bg-primary/5" : "bg-accent/5"}
-      `} />
-      
-      <CardHeader className="relative">
-        <div className="flex justify-between items-start">
+
+  return (
+    <Card
+      className={`
+        flex flex-col h-full
+        transform transition-all duration-300 ease-in-out
+        hover:scale-105 hover:shadow-xl
+        ${isPro ? 'border-primary border-2' : ''}
+        ${isCurrentPlan ? 'bg-muted/30' : ''}
+      `}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="transition-colors duration-200 hover:text-primary">
+            <CardTitle
+              className={`
+                text-2xl font-bold
+                ${isPro ? 'text-primary' : ''}
+              `}
+            >
               {plan.name}
             </CardTitle>
-            <CardDescription>{plan.description}</CardDescription>
+            <CardDescription className="mt-1">
+              {plan.description}
+            </CardDescription>
           </div>
-          {plan.name === "Pro" && (
-            <Badge 
+          {isPro && (
+            <Badge
               variant="default"
-              className="animate-pulse"
+              className="animate-pulse ml-2"
             >
               Popular
             </Badge>
           )}
         </div>
       </CardHeader>
-      
-      <CardContent className="relative">
-        <div className="mb-6 transition-transform duration-200 hover:scale-110 origin-left">
-          <span className="text-3xl font-bold">${plan.price}</span>
-          <span className="text-muted-foreground">/month</span>
+
+      <CardContent className="flex-grow">
+        <div className="my-4">
+          <div className="flex items-baseline">
+            <span className="text-4xl font-extrabold text-foreground mr-2">
+              ${plan.price}
+            </span>
+            <span className="text-muted-foreground">
+              /month
+            </span>
+          </div>
         </div>
-        <ul className="space-y-3">
-          {Array.isArray(plan.features) && plan.features.map((feature: any) => (
-            <li 
-              key={feature} 
-              className="flex items-center gap-2 transition-transform duration-200 hover:translate-x-2"
+
+        <ul className="space-y-3 mt-4">
+          {plan.features.map((feature, index) => (
+            <li
+              key={index}
+              className="flex items-center space-x-2 text-sm"
             >
-              <Check className="h-4 w-4 text-primary transition-colors duration-200 group-hover:text-primary" />
+              <Check
+                className={`
+                  h-5 w-5
+                  ${isPro ? 'text-primary' : 'text-green-500'}
+                `}
+              />
               <span>{feature}</span>
             </li>
           ))}
         </ul>
       </CardContent>
-      
-      <CardFooter className="relative">
+
+      <CardFooter className="mt-auto">
         <Button
-          className={`
-            w-full transition-all duration-300
-            ${plan.name === "Pro" 
-              ? "bg-primary hover:bg-primary/90 hover:shadow-md" 
-              : "hover:bg-primary hover:text-white"}
-          `}
-          variant={plan.name === "Pro" ? "default" : "outline"}
-          onClick={() => onSubscribe(plan.id)}
-          disabled={subscribing || plan.id === currentPlanId}
+          className="w-full"
+          variant={isPro ? "default" : "outline"}
+          onClick={handleSubscribe}
+          disabled={isCurrentPlan || isSubscribing}
         >
-          {subscribing ? (
+          {isSubscribing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : null}
-          {plan.id === currentPlanId ? "Current Plan" : "Select Plan"}
+          {isCurrentPlan ? "Current Plan" : "Select Plan"}
         </Button>
       </CardFooter>
     </Card>
   );
-  
+};
+
 export default PlanCard;

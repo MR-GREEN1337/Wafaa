@@ -18,9 +18,10 @@ export default function AcceptRelationshipButton({
   const handleAccept = () => {
     startTransition(async () => {
       try {
+        //console.log(relationshipId)
         await acceptRelationship(relationshipId);
         toast.success('Relationship accepted successfully!');
-        router.push(`/relationships/${relationshipId}`);
+        router.push(`/dashboard/relationships/${relationshipId}`);
       } catch (error) {
         toast.error('Failed to accept relationship');
       }

@@ -64,13 +64,7 @@ interface RelationshipReportProps {
 export function RelationshipReport({
   analysis,
 }: RelationshipReportProps) {
-  const sentimentData: SentimentDataPoint[] = analysis.content.patterns.map(
-    (pattern, index) => ({
-      name: `Week ${index + 1}`,
-      sentiment: pattern.sentiment * 100,
-    })
-  );
-
+  
   if (!analysis) {
     return (
       <Alert variant="destructive">
@@ -83,7 +77,14 @@ export function RelationshipReport({
     );
   }
 
-  console.log(analysis.content.patterns[0]);
+  const sentimentData: SentimentDataPoint[] = analysis.content.patterns ? (analysis.content.patterns.map(
+    (pattern, index) => ({
+      name: `Week ${index + 1}`,
+      sentiment: pattern.sentiment * 100,
+    })
+  )) : [];
+
+  //console.log(analysis.content.patterns[0]);
 
   return (
     <div className="space-y-6">
@@ -112,14 +113,14 @@ export function RelationshipReport({
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {analysis.content.topics.slice(0, 3).map((topic, i) => (
+              {analysis.content.topics && ( analysis.content.topics.slice(0, 3).map((topic, i) => (
                 <span
                   key={i}
                   className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
                 >
                   {topic}
                 </span>
-              ))}
+              )))}
             </div>
           </CardContent>
         </Card>
@@ -133,7 +134,7 @@ export function RelationshipReport({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analysis.content.patterns.length}
+              {analysis.content.patterns ? analysis.content.patterns.length: 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Distinct patterns identified
@@ -162,12 +163,12 @@ export function RelationshipReport({
         </CardHeader>
         <CardContent>
           <ul className="space-y-4">
-            {analysis.content.recommendations.map((rec, i) => (
+            {analysis.content.recommendations && (analysis.content.recommendations.map((rec, i) => (
               <li key={i} className="flex items-start space-x-2">
                 <div className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-violet-500" />
                 <p className="text-sm text-muted-foreground">{rec}</p>
               </li>
-            ))}
+            )))}
           </ul>
         </CardContent>
       </Card>
