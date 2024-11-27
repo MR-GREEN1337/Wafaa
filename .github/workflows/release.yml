@@ -22,9 +22,11 @@ jobs:
 
       - name: Sync files to EC2
         run: |
-            rsync -avz --exclude .git --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            --exclude .git \
+            --delete \
+            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIRECTORY }}
 
       - name: Build application on EC2
         run: |
